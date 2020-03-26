@@ -235,7 +235,7 @@ abstract class AbstractSocketIO implements EngineInterface
     {
         return [
             'debug' => false,
-            'wait' => 0,
+            'wait' => 50 * 1000, // 50 ms
             'timeout' => \ini_get("default_socket_timeout")
         ];
     }
