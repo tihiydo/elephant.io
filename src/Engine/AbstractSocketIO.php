@@ -99,6 +99,12 @@ abstract class AbstractSocketIO implements EngineInterface
         throw new UnsupportedActionException($this, 'emit');
     }
 
+    /** {@inheritDoc} */
+    public function wait($event)
+    {
+      throw new UnsupportedActionException($this, 'wait');
+    }
+
     /**
      * Network safe \fread wrapper
      *

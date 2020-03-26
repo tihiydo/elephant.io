@@ -77,6 +77,11 @@ class Version0X extends AbstractSocketIO
     }
 
     /** {@inheritDoc} */
+    public function wait($event)
+    {
+    }
+
+    /** {@inheritDoc} */
     public function write($code, $message = null)
     {
         if (!$this->isConnected()) {
@@ -233,3 +238,4 @@ class Version0X extends AbstractSocketIO
         }
     }
 }
+

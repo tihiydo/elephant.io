@@ -97,6 +97,19 @@ class Client
     }
 
     /**
+     * Wait an event arrived from the engine
+     *
+     * @param string $event
+     *
+     * @return \stdClass
+     */
+    public function wait($event)
+    {
+        $this->logger->debug('Waiting for event', ['event' => $event]);
+        return $this->engine->wait($event);
+    }
+
+    /**
      * Sets the namespace for the next messages
      *
      * @param string namespace the name of the namespace

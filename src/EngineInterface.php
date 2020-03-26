@@ -44,6 +44,14 @@ interface EngineInterface
      */
     public function emit($event, array $args);
 
+    /**
+     * Wait for event to arrive.
+     *
+     * @param string $event
+     * @return \stdClass
+     */
+    public function wait($event);
+
     /** Keeps alive the connection */
     public function keepAlive();
 

@@ -83,6 +83,21 @@ class Version1X extends AbstractSocketIO
     }
 
     /** {@inheritDoc} */
+    public function wait($event)
+    {
+        while (true) {
+            $this->keepAlive();
+            if ($data = $this->read()) {
+                $packet = $this->decodePacket($data);
+                if ($packet->proto === static::PROTO_MESSAGE && $packet->type === static::PACKET_EVENT &&
+                    $packet->nsp === $this->namespace && $packet->event === $event) {
+                    return $packet;
+                }
+            }
+        }
+    }
+
+    /** {@inheritDoc} */
     public function of($namespace)
     {
         $this->keepAlive();
