@@ -12,10 +12,11 @@
 namespace ElephantIO\Engine\SocketIO;
 
 use InvalidArgumentException;
-use UnexpectedValueException;
 
 use ElephantIO\Payload\Encoder;
 use ElephantIO\Engine\AbstractSocketIO;
+use ElephantIO\Engine\Socket;
+use ElephantIO\Engine\SequentialStream;
 
 use ElephantIO\Exception\SocketException;
 use ElephantIO\Exception\UnsupportedTransportException;
@@ -45,56 +46,25 @@ class Version1X extends AbstractSocketIO
     /** {@inheritDoc} */
     public function connect()
     {
-        if (\is_resource($this->stream)) {
+        if ($this->isConnected()) {
             return;
         }
 
         $this->handshake();
-
-        $protocol = 'http';
-        $errors = [null, null];
-        $host   = \sprintf('%s:%d', $this->url['host'], $this->url['port']);
-
-        if (true === $this->url['secured']) {
-            $protocol = 'ssl';
-            $host = 'ssl://' . $host;
-        }
-
-        // add custom headers
-        if (isset($this->options['headers'])) {
-            $headers = isset($this->context[$protocol]['header']) ? $this->context[$protocol]['header'] : [];
-            $this->context[$protocol]['header'] = \array_merge($headers, $this->options['headers']);
-        }
-
-        $this->stream = \stream_socket_client(
-            $host,
-            $errors[0],
-            $errors[1],
-            $this->options['timeout'],
-            STREAM_CLIENT_CONNECT,
-            \stream_context_create($this->context)
-        );
-
-        if (!\is_resource($this->stream)) {
-            throw new SocketException($errors[0], $errors[1]);
-        }
-
-        \stream_set_timeout($this->stream, $this->options['timeout']);
-
         $this->upgradeTransport();
     }
 
     /** {@inheritDoc} */
     public function close()
     {
-        if (!\is_resource($this->stream)) {
+        if (!$this->isConnected()) {
             return;
         }
 
         $this->write(static::PROTO_CLOSE);
 
-        \fclose($this->stream);
-        $this->stream = null;
+        $this->socket->close();
+        $this->socket = null;
         $this->session = null;
         $this->cookies = [];
     }
@@ -109,7 +79,7 @@ class Version1X extends AbstractSocketIO
             $namespace .= ',';
         }
 
-        return $this->write(static::PROTO_MESSAGE, static::PACKET_EVENT . $namespace . \json_encode([$event, $args]));
+        return $this->write(static::PROTO_MESSAGE, static::PACKET_EVENT . $namespace . json_encode([$event, $args]));
     }
 
     /** {@inheritDoc} */
@@ -119,25 +89,23 @@ class Version1X extends AbstractSocketIO
         parent::of($namespace);
 
         $this->write(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
+
+        if ($data = $this->read()) {
+            $packet = $this->decodePacket($data);
+
+            return $packet;
+        }
     }
 
     /** {@inheritDoc} */
     public function write($code, $message = null)
     {
-        if (!\is_resource($this->stream)) {
+        if (!$this->isConnected()) {
             return;
         }
 
-        if (!\is_int($code) || 0 > $code || 6 < $code) {
-            throw new InvalidArgumentException('Wrong message type when trying to write on the socket');
-        }
-
-        $payload = new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
-        $bytes = @\fwrite($this->stream, (string) $payload);
-
-        if ($bytes === false){
-            throw new \Exception("Message was not delivered");
-        }
+        $payload = $this->getPayload($code, $message);
+        $bytes = $this->socket->send((string) $payload);
 
         // wait a little bit of time after this message was sent
         \usleep((int) $this->options['wait']);
@@ -163,6 +131,114 @@ class Version1X extends AbstractSocketIO
         return $defaults;
     }
 
+    /**
+     * Create socket.
+     *
+     * @throws SocketException
+     */
+    protected function createSocket()
+    {
+        $this->socket = new Socket($this->url, $this->context, $this->options);
+        if ($errors = $this->socket->getErrors()) {
+            throw new SocketException($errors[0], $errors[1]);
+        }
+    }
+
+    /**
+     * Create payload.
+     *
+     * @param int $code
+     * @param string $message
+     * @throws \InvalidArgumentException
+     * @return \ElephantIO\Payload\Encoder
+     */
+    protected function getPayload($code, $message)
+    {
+        if (!is_int($code) || static::PROTO_OPEN > $code || static::PROTO_NOOP < $code) {
+            throw new \InvalidArgumentException('Wrong message type when trying to write on the socket');
+        }
+
+        return new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
+    }
+
+    /**
+     * Decode payload data.
+     *
+     * @param string $data
+     * @return \stdClass[]
+     */
+    protected function decodeData($data)
+    {
+        $result = [];
+        $seq = new SequentialStream($data);
+        while (!$seq->isEof()) {
+            if (null === ($len = $seq->readUntil(':'))) {
+                throw new \RuntimeException('Data delimeter not found!');
+            }
+
+            $dseq = new SequentialStream($seq->read((int) $len));
+            $type = (int) $dseq->read();
+            $packet = $dseq->getData();
+            switch ($type) {
+                case static::PACKET_CONNECT:
+                  $packet = json_decode($packet, true);
+                  break;
+            }
+            $item = new \stdClass();
+            $item->type = $type;
+            $item->data = $packet;
+            $result[] = $item;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Pick data which has a type.
+     *
+     * @param array $data
+     * @param int $type
+     * @return \stdClass
+     */
+    protected function pickData($data, $type)
+    {
+        foreach ($data as $item) {
+            if (isset($item->type) && $item->type === $type) {
+                return $item;
+            }
+        }
+    }
+
+    /**
+     * Decode a packet.
+     *
+     * @param string $data
+     * @return \stdClass
+     */
+    protected function decodePacket($data)
+    {
+        $seq = new SequentialStream($data);
+        $proto = (int) $seq->read();
+        if ($proto >= static::PROTO_OPEN && $proto <= static::PROTO_NOOP) {
+            $packet = new \stdClass();
+            $packet->proto = $proto;
+            $packet->type = (int) $seq->read();
+            $packet->nsp = $seq->readUntil();
+
+            switch ($packet->proto) {
+                case static::PROTO_MESSAGE:
+                    $data = json_decode($seq->getData(), true);
+                    if ($packet->type === static::PACKET_EVENT && 2 === count($data)) {
+                        $packet->event = $data[0];
+                        $packet->data = $data[1];
+                    }
+                    break;
+            }
+
+            return $packet;
+        }
+    }
+
     /** Does the handshake with the Socket.io server and populates the `session` value object */
     protected function handshake()
     {
@@ -170,70 +246,49 @@ class Version1X extends AbstractSocketIO
             return;
         }
 
-        $query = ['use_b64'   => $this->options['use_b64'],
-                  'EIO'       => $this->options['version'],
-                  'transport' => $this->options['transport']];
+        $this->createSocket();
 
-        if (isset($this->url['query'])) {
-            $query = \array_replace($query, $this->url['query']);
+        $url = $this->socket->getParsedUrl();
+        $query = [
+            'EIO'       => $this->options['version'],
+            'transport' => $this->options['transport']
+        ];
+        if ($this->options['use_b64']) {
+            $query['b64'] = 1;
+        }
+        if (isset($url['query'])) {
+            $query = array_replace($query, $url['query']);
         }
 
-        $context = $this->context;
-        $protocol = true === $this->url['secured'] ? 'ssl' : 'http';
-
-        if (!isset($context[$protocol])) {
-            $context[$protocol] = [];
+        $this->socket->request(sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query)), ['Connection: close']);
+        if ($this->socket->getStatusCode() != 200) {
+            throw new ServerConnectionFailureException('Unable to perform handshake');
         }
 
-        // add customer headers
-        if (isset($this->options['headers'])) {
-            $headers = isset($context['http']['header']) ? $context['http']['header'] : [];
-            $context['http']['header'] = array_merge($headers, $this->options['headers']);
-        }
-
-        $url    = \sprintf(
-            '%s://%s:%d/%s/?%s',
-            $this->url['scheme'],
-            $this->url['host'],
-            $this->url['port'],
-            \trim($this->url['path'], '/'),
-            \http_build_query($query)
-        );
-
-        $result = @\file_get_contents($url, false, \stream_context_create($context));
-
-        if (false === $result) {
-            $message = null;
-            $error = \error_get_last();
-
-            if (null !== $error && false !== \strpos($error['message'], 'file_get_contents()')) {
-                $message = $error['message'];
+        $handshake = null;
+        if (count($data = $this->decodeData($this->socket->getBody()))) {
+            if ($data = $this->pickData($data, static::PACKET_CONNECT)) {
+                $handshake = $data->data;
             }
-
-            throw new ServerConnectionFailureException($message);
         }
 
-        $open_curly_at = \strpos($result, '{');
-        $todecode = \substr($result, $open_curly_at, \strrpos($result, '}')-$open_curly_at+1);
-        $decoded = \json_decode($todecode, true);
-
-        if (!\in_array('websocket', $decoded['upgrades'])) {
+        if (null === $handshake || !in_array('websocket', $handshake['upgrades'])) {
             throw new UnsupportedTransportException('websocket');
         }
 
         $cookies = [];
-        foreach ($http_response_header as $header) {
-            if (\preg_match('/^Set-Cookie:\s*([^;]*)/i', $header, $matches)) {
+        foreach ($this->socket->getHeaders() as $header) {
+            $matches = null;
+            if (preg_match('/^Set-Cookie:\s*([^;]*)/i', $header, $matches)) {
                 $cookies[] = $matches[1];
             }
         }
         $this->cookies = $cookies;
-
         $this->session = new Session(
-            $decoded['sid'],
-            $decoded['pingInterval'] / 1000,
-            $decoded['pingTimeout'] / 1000,
-            $decoded['upgrades']
+            $handshake['sid'],
+            $handshake['pingInterval'] / 1000,
+            $handshake['pingTimeout'] / 1000,
+            $handshake['upgrades']
         );
     }
 
@@ -246,61 +301,55 @@ class Version1X extends AbstractSocketIO
      */
     protected function upgradeTransport()
     {
-        $query = ['sid'       => $this->session->id,
-                  'EIO'       => $this->options['version'],
-                  'transport' => static::TRANSPORT_WEBSOCKET];
+        $this->createSocket();
 
-        if ($this->options['version'] === 2) {
-            $query['use_b64'] = $this->options['use_b64'];
+        $url = $this->socket->getParsedUrl();
+        $query = [
+            'EIO'       => $this->options['version'],
+            'transport' => static::TRANSPORT_WEBSOCKET,
+            'sid'       => $this->session->id,
+        ];
+
+        if ($this->options['version'] === 2 && $this->options['use_b64']) {
+            $query['b64'] = 1;
         }
 
-        $url = \sprintf('/%s/?%s', \trim($this->url['path'], '/'), \http_build_query($query));
+        $uri = sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query));
 
-        $hash = \sha1(\uniqid(\mt_rand(), true), true);
+        $hash = sha1(uniqid(mt_rand(), true), true);
 
         if ($this->options['version'] !== 2) {
-            $hash = \substr($hash, 0, 16);
+            $hash = substr($hash, 0, 16);
         }
 
-        $key = \base64_encode($hash);
+        $key = base64_encode($hash);
 
         $origin = '*';
-        $headers = isset($this->context['headers']) ? (array) $this->context['headers'] : [] ;
+        $headers = isset($this->context['headers']) ? (array) $this->context['headers'] : [];
 
         foreach ($headers as $header) {
             $matches = [];
-
-            if (\preg_match('`^Origin:\s*(.+?)$`', $header, $matches)) {
+            if (preg_match('`^Origin:\s*(.+?)$`', $header, $matches)) {
                 $origin = $matches[1];
                 break;
             }
         }
 
-        $request = "GET {$url} HTTP/1.1\r\n"
-                 . "Host: {$this->url['host']}:{$this->url['port']}\r\n"
-                 . "Upgrade: WebSocket\r\n"
-                 . "Connection: Upgrade\r\n"
-                 . "Sec-WebSocket-Key: {$key}\r\n"
-                 . "Sec-WebSocket-Version: 13\r\n"
-                 . "Origin: {$origin}\r\n";
+        $headers = [
+            'Upgrade: WebSocket',
+            'Connection: Upgrade',
+            sprintf('Sec-WebSocket-Key: %s', $key),
+            'Sec-WebSocket-Version: 13',
+            sprintf('Origin: %s', $origin),
+        ];
 
         if (!empty($this->cookies)) {
-            $request .= "Cookie: " . \implode('; ', $this->cookies) . "\r\n";
+            $headers[] = sprintf('Cookie: %s', implode('; ', $this->cookies));
         }
-
-        $request .= "\r\n";
-
-        \fwrite($this->stream, $request);
-        $result = $this->readBytes(12);
-
-        if ('HTTP/1.1 101' !== $result) {
-            throw new UnexpectedValueException(
-                \sprintf('The server returned an unexpected value. Expected "HTTP/1.1 101", had "%s"', $result)
-            );
+        $this->socket->request($uri, $headers, ['skip_body' => true]);
+        if ($this->socket->getStatusCode() != 101) {
+            throw new ServerConnectionFailureException('Unable to upgrade to WebSocket');
         }
-
-        // cleaning up the stream
-        while ('' !== \trim(\fgets($this->stream)));
 
         $this->write(static::PROTO_UPGRADE);
 

@@ -12,15 +12,12 @@
 namespace ElephantIO\Engine;
 
 use DomainException;
-use ElephantIO\Engine\SocketIO\Session;
 use RuntimeException;
 
-use Psr\Log\LoggerInterface;
-
 use ElephantIO\EngineInterface;
+use ElephantIO\Engine\SocketIO\Session;
 use ElephantIO\Payload\Decoder;
 use ElephantIO\Exception\UnsupportedActionException;
-use ElephantIO\Exception\MalformedUrlException;
 
 abstract class AbstractSocketIO implements EngineInterface
 {
@@ -44,8 +41,8 @@ abstract class AbstractSocketIO implements EngineInterface
     /** @var mixed[] Array of options for the engine */
     protected $options;
 
-    /** @var resource Resource to the connected stream */
-    protected $stream;
+    /** @var Socket Resource to the connected stream */
+    protected $socket;
 
     /** @var string the namespace of the next message */
     protected $namespace = '';
@@ -55,7 +52,7 @@ abstract class AbstractSocketIO implements EngineInterface
 
     public function __construct($url, array $options = [])
     {
-        $this->url = $this->parseUrl($url);
+        $this->url = $url;
 
         if (isset($options['context'])) {
             $this->context = $options['context'];
@@ -112,7 +109,7 @@ abstract class AbstractSocketIO implements EngineInterface
     {
         $data = '';
         $chunk = null;
-        while ($bytes > 0 && false !== ($chunk = \fread($this->stream, $bytes))) {
+        while ($bytes > 0 && false !== ($chunk = \fread($this->socket->getHandle(), $bytes))) {
             $bytes -= \strlen($chunk);
             $data .= $chunk;
         }
@@ -131,11 +128,12 @@ abstract class AbstractSocketIO implements EngineInterface
      */
     public function read()
     {
-        if (!\is_resource($this->stream)) {
+        if (!$this->socket || !\is_resource($this->socket->getHandle())) {
             return;
         }
 
         $this->keepAlive();
+
         /*
          * The first byte contains the FIN bit, the reserved bits, and the
          * opcode... We're not interested in them. Yet.
@@ -213,41 +211,13 @@ abstract class AbstractSocketIO implements EngineInterface
     }
 
     /**
-     * Parse an url into parts we may expect
+     * Check if connection has made.
      *
-     * @param string $url
-     *
-     * @return string[] information on the given URL
+     * @return boolean
      */
-    protected function parseUrl($url)
+    public function isConnected()
     {
-        $parsed = \parse_url($url);
-
-        if (false === $parsed) {
-            throw new MalformedUrlException($url);
-        }
-
-        $server = \array_replace(['scheme' => 'http',
-                                 'host'   => 'localhost',
-                                 'query'  => []
-                                ], $parsed);
-
-        if (!isset($server['port'])) {
-            $server['port'] = 'https' === $server['scheme'] ? 443 : 80;
-        }
-
-        if (!isset($server['path']) || $server['path']=='/') {
-            $server['path'] = 'socket.io';
-        }
-
-        if (!\is_array($server['query'])) {
-            \parse_str($server['query'], $query);
-            $server['query'] = $query;
-        }
-
-        $server['secured'] = 'https' === $server['scheme'];
-
-        return $server;
+        return $this->socket ? true : false;
     }
 
     /**
