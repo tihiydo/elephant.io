@@ -109,7 +109,7 @@ class Version1X extends AbstractSocketIO
             $namespace .= ',';
         }
 
-        return $this->write(static::PROTO_MESSAGE, static::EVENT . $namespace . \json_encode([$event, $args]));
+        return $this->write(static::PROTO_MESSAGE, static::PACKET_EVENT . $namespace . \json_encode([$event, $args]));
     }
 
     /** {@inheritDoc} */
@@ -118,7 +118,7 @@ class Version1X extends AbstractSocketIO
         $this->keepAlive();
         parent::of($namespace);
 
-        $this->write(static::PROTO_MESSAGE, static::CONNECT . $namespace);
+        $this->write(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
     }
 
     /** {@inheritDoc} */

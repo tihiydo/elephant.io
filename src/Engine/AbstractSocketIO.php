@@ -24,13 +24,13 @@ use ElephantIO\Exception\MalformedUrlException;
 
 abstract class AbstractSocketIO implements EngineInterface
 {
-    const CONNECT      = 0;
-    const DISCONNECT   = 1;
-    const EVENT        = 2;
-    const ACK          = 3;
-    const ERROR        = 4;
-    const BINARY_EVENT = 5;
-    const BINARY_ACK   = 6;
+    const PACKET_CONNECT      = 0;
+    const PACKET_DISCONNECT   = 1;
+    const PACKET_EVENT        = 2;
+    const PACKET_ACK          = 3;
+    const PACKET_ERROR        = 4;
+    const PACKET_BINARY_EVENT = 5;
+    const PACKET_BINARY_ACK   = 6;
 
     /** @var string[] Parse url result */
     protected $url;
