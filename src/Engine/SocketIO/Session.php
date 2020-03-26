@@ -36,7 +36,7 @@ class Session
     {
         $this->id        = $id;
         $this->upgrades  = $upgrades;
-        $this->heartbeat = \microtime(true);
+        $this->heartbeat = $this->getTime();
 
         $this->timeouts  = ['timeout'  => (float)$timeout,
                             'interval' => (float)$interval];
@@ -59,6 +59,11 @@ class Session
         return $this->$prop;
     }
 
+    protected function getTime()
+    {
+        return \microtime(true);
+    }
+
     /**
      * Checks whether a new heartbeat is necessary, and does a new heartbeat if it is the case
      *
@@ -66,8 +71,8 @@ class Session
      */
     public function needsHeartbeat()
     {
-        if (0 < $this->timeouts['interval'] && \microtime(true) > ($this->timeouts['interval'] + $this->heartbeat - 5)) {
-            $this->heartbeat = \microtime(true);
+        if (0 < $this->timeouts['interval'] && $this->getTime() > ($this->timeouts['interval'] + $this->heartbeat - 5)) {
+            $this->heartbeat = $this->getTime();
 
             return true;
         }
