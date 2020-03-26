@@ -17,7 +17,6 @@ use UnexpectedValueException;
 
 use Psr\Log\LoggerInterface;
 
-use ElephantIO\EngineInterface;
 use ElephantIO\Payload\Encoder;
 use ElephantIO\Engine\AbstractSocketIO;
 
@@ -35,15 +34,15 @@ use ElephantIO\Exception\ServerConnectionFailureException;
  */
 class Version0X extends AbstractSocketIO
 {
-    const CLOSE         = 0;
-    const OPEN          = 1;
-    const HEARTBEAT     = 2;
-    const MESSAGE       = 3;
-    const JOIN_MESSAGE  = 4;
-    const EVENT         = 5;
-    const ACK           = 6;
-    const ERROR         = 7;
-    const NOOP          = 8;
+    const PROTO_CLOSE         = 0;
+    const PROTO_OPEN          = 1;
+    const PROTO_HEARTBEAT     = 2;
+    const PROTO_MESSAGE       = 3;
+    const PROTO_JOIN_MESSAGE  = 4;
+    const PROTO_EVENT         = 5;
+    const PROTO_ACK           = 6;
+    const PROTO_ERROR         = 7;
+    const PROTO_NOOP          = 8;
 
     const TRANSPORT_POLLING   = 'xhr-polling';
     const TRANSPORT_WEBSOCKET = 'websocket';
@@ -97,7 +96,7 @@ class Version0X extends AbstractSocketIO
             return;
         }
 
-        $this->write(static::CLOSE);
+        $this->write(static::PROTO_CLOSE);
         \fclose($this->stream);
         $this->stream = null;
         $this->session = null;
@@ -107,7 +106,7 @@ class Version0X extends AbstractSocketIO
     /** {@inheritDoc} */
     public function emit($event, array $args)
     {
-        $this->write(static::EVENT, \json_encode(['name' => $event, 'args' => $args]));
+        $this->write(static::PROTO_EVENT, \json_encode(['name' => $event, 'args' => $args]));
     }
 
     /** {@inheritDoc} */
@@ -135,7 +134,7 @@ class Version0X extends AbstractSocketIO
     {
         parent::of($namespace);
 
-        $this->write(static::OPEN);
+        $this->write(static::PROTO_OPEN);
     }
 
     /** {@inheritDoc} */

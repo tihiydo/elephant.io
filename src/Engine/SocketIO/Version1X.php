@@ -14,7 +14,6 @@ namespace ElephantIO\Engine\SocketIO;
 use InvalidArgumentException;
 use UnexpectedValueException;
 
-use ElephantIO\EngineInterface;
 use ElephantIO\Payload\Encoder;
 use ElephantIO\Engine\AbstractSocketIO;
 
@@ -32,6 +31,14 @@ use ElephantIO\Exception\ServerConnectionFailureException;
  */
 class Version1X extends AbstractSocketIO
 {
+    const PROTO_OPEN    = 0;
+    const PROTO_CLOSE   = 1;
+    const PROTO_PING    = 2;
+    const PROTO_PONG    = 3;
+    const PROTO_MESSAGE = 4;
+    const PROTO_UPGRADE = 5;
+    const PROTO_NOOP    = 6;
+
     const TRANSPORT_POLLING   = 'polling';
     const TRANSPORT_WEBSOCKET = 'websocket';
 
@@ -84,7 +91,7 @@ class Version1X extends AbstractSocketIO
             return;
         }
 
-        $this->write(EngineInterface::CLOSE);
+        $this->write(static::PROTO_CLOSE);
 
         \fclose($this->stream);
         $this->stream = null;
@@ -102,7 +109,7 @@ class Version1X extends AbstractSocketIO
             $namespace .= ',';
         }
 
-        return $this->write(EngineInterface::MESSAGE, static::EVENT . $namespace . \json_encode([$event, $args]));
+        return $this->write(static::PROTO_MESSAGE, static::EVENT . $namespace . \json_encode([$event, $args]));
     }
 
     /** {@inheritDoc} */
@@ -111,7 +118,7 @@ class Version1X extends AbstractSocketIO
         $this->keepAlive();
         parent::of($namespace);
 
-        $this->write(EngineInterface::MESSAGE, static::CONNECT . $namespace);
+        $this->write(static::PROTO_MESSAGE, static::CONNECT . $namespace);
     }
 
     /** {@inheritDoc} */
@@ -295,9 +302,9 @@ class Version1X extends AbstractSocketIO
         // cleaning up the stream
         while ('' !== \trim(\fgets($this->stream)));
 
-        $this->write(EngineInterface::UPGRADE);
+        $this->write(static::PROTO_UPGRADE);
 
-        //remove message '40' from buffer, emmiting by socket.io after receiving EngineInterface::UPGRADE
+        //remove message '40' from buffer, emmiting by socket.io after receiving static::PROTO_UPGRADE
         if ($this->options['version'] === 2) {
             $this->read();
         }
@@ -309,7 +316,7 @@ class Version1X extends AbstractSocketIO
     public function keepAlive()
     {
         if ($this->session->needsHeartbeat()) {
-            $this->write(static::PING);
+            $this->write(static::PROTO_PING);
         }
     }
 }
