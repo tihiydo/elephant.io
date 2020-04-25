@@ -115,13 +115,20 @@ abstract class AbstractSocketIO implements EngineInterface
     {
         $data = '';
         $chunk = null;
-        while ($bytes > 0 && false !== ($chunk = \fread($this->socket->getHandle(), $bytes))) {
+        while ($bytes > 0) {
+            if (!$this->socket->isConnected()) {
+                throw new \RuntimeException('Socket disconnected');
+            }
+            $this->keepAlive();
+            if (false === ($chunk = \fread($this->socket->getHandle(), $bytes))) {
+                break;
+            }
             $bytes -= \strlen($chunk);
             $data .= $chunk;
         }
 
         if (false === $chunk) {
-            throw new RuntimeException('Could not read from stream');
+            throw new \RuntimeException('Could not read from stream');
         }
         return $data;
     }
@@ -137,8 +144,6 @@ abstract class AbstractSocketIO implements EngineInterface
         if (!$this->socket || !\is_resource($this->socket->getHandle())) {
             return;
         }
-
-        $this->keepAlive();
 
         /*
          * The first byte contains the FIN bit, the reserved bits, and the
@@ -223,7 +228,7 @@ abstract class AbstractSocketIO implements EngineInterface
      */
     public function isConnected()
     {
-        return $this->socket ? true : false;
+        return $this->socket ? $this->socket->isConnected() : false;
     }
 
     /**

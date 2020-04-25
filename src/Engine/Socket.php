@@ -51,6 +51,11 @@ class Socket
     protected $result = null;
 
     /**
+     * @var array
+     */
+    protected $metadata = null;
+
+    /**
      * Constructor.
      *
      * @param string $url
@@ -97,6 +102,16 @@ class Socket
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    /**
+     * Get socket meta data.
+     *
+     * @return array
+     */
+    public function getMetadata()
+    {
+        return $this->metadata;
     }
 
     /**
@@ -254,6 +269,20 @@ class Socket
         $result['secured'] = 'https' === $result['scheme'];
 
         return $result;
+    }
+
+    /**
+     * Check if socket is still connected.
+     *
+     * @return boolean
+     */
+    public function isConnected()
+    {
+        if (is_resource($this->handle)) {
+            $this->metadata = stream_get_meta_data($this->handle);
+
+            return $this->metadata['eof'] ? false : true;
+        }
     }
 
     /**
