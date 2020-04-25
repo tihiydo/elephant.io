@@ -86,7 +86,6 @@ class Version1X extends AbstractSocketIO
     public function wait($event)
     {
         while (true) {
-            $this->keepAlive();
             if ($data = $this->read()) {
                 $packet = $this->decodePacket($data);
                 if ($packet->proto === static::PROTO_MESSAGE && $packet->type === static::PACKET_EVENT &&
@@ -261,6 +260,9 @@ class Version1X extends AbstractSocketIO
             return;
         }
 
+        // set timeout to default
+        $this->options['timeout'] = $this->getDefaultOptions()['timeout'];
+
         $this->createSocket();
 
         $url = $this->socket->getParsedUrl();
@@ -316,6 +318,9 @@ class Version1X extends AbstractSocketIO
      */
     protected function upgradeTransport()
     {
+        // set timeout based on handshake response
+        $this->options['timeout'] = $this->session->getTimeout();
+
         $this->createSocket();
 
         $url = $this->socket->getParsedUrl();

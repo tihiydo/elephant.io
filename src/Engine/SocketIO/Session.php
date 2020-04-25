@@ -65,6 +65,26 @@ class Session
     }
 
     /**
+     * Get timeout.
+     *
+     * @return float
+     */
+    public function getTimeout()
+    {
+        return $this->timeouts['timeout'];
+    }
+
+    /**
+     * Get interval.
+     *
+     * @return float
+     */
+    public function getInterval()
+    {
+        return $this->timeouts['interval'];
+    }
+
+    /**
      * Checks whether a new heartbeat is necessary, and does a new heartbeat if it is the case
      *
      * @return Boolean true if there was a heartbeat, false otherwise

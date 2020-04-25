@@ -159,6 +159,9 @@ class Version0X extends AbstractSocketIO
             return;
         }
 
+        // set timeout to default
+        $this->options['timeout'] = $this->getDefaultOptions()['timeout'];
+
         $this->createSocket();
 
         $url = $this->socket->getParsedUrl();
@@ -199,6 +202,9 @@ class Version0X extends AbstractSocketIO
     /** Upgrades the transport to WebSocket */
     protected function upgradeTransport()
     {
+        // set timeout based on handshake response
+        $this->options['timeout'] = $this->session->getTimeout();
+
         $this->createSocket();
 
         $url = $this->socket->getParsedUrl();
