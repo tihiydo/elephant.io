@@ -237,14 +237,15 @@ class Version1X extends AbstractSocketIO
             $packet = new \stdClass();
             $packet->proto = $proto;
             $packet->type = (int) $seq->read();
-            $packet->nsp = $seq->readUntil();
+            $packet->nsp = $seq->readUntil(',[', array('['));
 
             switch ($packet->proto) {
                 case static::PROTO_MESSAGE:
-                    $data = json_decode($seq->getData(), true);
-                    if ($packet->type === static::PACKET_EVENT && 2 === count($data)) {
-                        $packet->event = $data[0];
-                        $packet->data = $data[1];
+                    if (null !== ($data = json_decode($seq->getData(), true))) {
+                        if ($packet->type === static::PACKET_EVENT && 2 === count($data)) {
+                            $packet->event = $data[0];
+                            $packet->data = $data[1];
+                        }
                     }
                     break;
             }
