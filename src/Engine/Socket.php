@@ -84,7 +84,7 @@ class Socket
             $host = 'ssl://' . $host;
         }
 
-        $this->handle = stream_socket_client($host, $errors[0], $errors[1], $timeout, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT,
+        $this->handle = @stream_socket_client($host, $errors[0], $errors[1], $timeout, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT,
             stream_context_create($this->context));
 
         if (is_resource($this->handle)) {
