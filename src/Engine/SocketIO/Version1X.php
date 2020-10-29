@@ -299,9 +299,7 @@ class Version1X extends AbstractSocketIO
 
         //remove message '40' from buffer, emmiting by socket.io after receiving EngineInterface::UPGRADE
         if ($this->options['version'] === 2) {
-            if (stream_get_meta_data($this->stream)["unread_bytes"] !== 0) {
-                $this->read();
-            }
+            $this->read();
         }
     }
 
