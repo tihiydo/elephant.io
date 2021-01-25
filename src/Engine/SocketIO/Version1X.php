@@ -186,7 +186,7 @@ class Version1X extends AbstractSocketIO
         $result = [];
         $seq = new SequentialStream($data);
         while (!$seq->isEof()) {
-            if (null === ($len = $seq->readUntil(':'))) {
+            if (null === ($len = $this->options['version'] >= 4 ? strlen($seq->getData()) : $seq->readUntil(':'))) {
                 throw new \RuntimeException('Data delimeter not found!');
             }
 
@@ -339,7 +339,7 @@ class Version1X extends AbstractSocketIO
 
         $hash = sha1(uniqid(mt_rand(), true), true);
 
-        if ($this->options['version'] !== 2) {
+        if ($this->options['version'] > 2) {
             $hash = substr($hash, 0, 16);
         }
 
