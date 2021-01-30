@@ -89,7 +89,7 @@ class Version1X extends AbstractSocketIO
             if ($data = $this->read()) {
                 $packet = $this->decodePacket($data);
                 if ($packet->proto === static::PROTO_MESSAGE && $packet->type === static::PACKET_EVENT &&
-                    $packet->nsp === $this->namespace && $packet->event === $event) {
+                    $this->matchNamespace($packet->nsp) && $packet->event === $event) {
                     return $packet;
                 }
             }
@@ -237,7 +237,7 @@ class Version1X extends AbstractSocketIO
             $packet = new \stdClass();
             $packet->proto = $proto;
             $packet->type = (int) $seq->read();
-            $packet->nsp = $seq->readUntil(',[', array('['));
+            $packet->nsp = $seq->readUntil(',[', ['[']);
 
             switch ($packet->proto) {
                 case static::PROTO_MESSAGE:
@@ -251,6 +251,13 @@ class Version1X extends AbstractSocketIO
             }
 
             return $packet;
+        }
+    }
+
+    protected function matchNamespace($namespace)
+    {
+        if ($namespace === $this->namespace || (substr($this->namespace, 1) === $namespace)) {
+            return true;
         }
     }
 

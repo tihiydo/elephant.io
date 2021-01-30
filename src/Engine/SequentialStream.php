@@ -51,7 +51,7 @@ class SequentialStream
      * @param array $noskips
      * @return string
      */
-    public function readUntil($delimeter = ',', $noskips = array())
+    public function readUntil($delimeter = ',', $noskips = [])
     {
         if (!$this->isEof()) {
             list($p, $d) = $this->getPos($this->data, $delimeter);
@@ -89,7 +89,7 @@ class SequentialStream
             }
         }
 
-        return array($pos, $delim);
+        return [$pos, $delim];
     }
 
     /**
