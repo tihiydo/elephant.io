@@ -287,7 +287,7 @@ class Version1X extends AbstractSocketIO
 
         $this->socket->request(sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query)), ['Connection: close']);
         if ($this->socket->getStatusCode() != 200) {
-            throw new ServerConnectionFailureException('Unable to perform handshake');
+            throw new ServerConnectionFailureException('unable to perform handshake');
         }
 
         $handshake = null;
@@ -376,7 +376,7 @@ class Version1X extends AbstractSocketIO
         }
         $this->socket->request($uri, $headers, ['skip_body' => true]);
         if ($this->socket->getStatusCode() != 101) {
-            throw new ServerConnectionFailureException('Unable to upgrade to WebSocket');
+            throw new ServerConnectionFailureException('unable to upgrade to WebSocket');
         }
 
         $this->write(static::PROTO_UPGRADE);

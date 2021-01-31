@@ -11,11 +11,12 @@
 
 namespace ElephantIO\Exception;
 
+use Exception;
 use RuntimeException;
 
 class UnsupportedTransportException extends RuntimeException
 {
-    public function __construct($transport, \Exception $previous = null)
+    public function __construct($transport, Exception $previous = null)
     {
         parent::__construct(
             \sprintf('This server does not support the %s transport, aborting', $transport),
