@@ -268,6 +268,8 @@ class Version1X extends AbstractSocketIO
             return;
         }
 
+        $this->logger->debug('Starting handshake');
+
         // set timeout to default
         $this->options['timeout'] = $this->getDefaultOptions()['timeout'];
 
@@ -308,6 +310,7 @@ class Version1X extends AbstractSocketIO
                 $cookies[] = $matches[1];
             }
         }
+
         $this->cookies = $cookies;
         $this->session = new Session(
             $handshake['sid'],
@@ -315,6 +318,8 @@ class Version1X extends AbstractSocketIO
             $handshake['pingTimeout'] / 1000,
             $handshake['upgrades']
         );
+
+        $this->logger->debug(sprintf('Handshake finished with %s', var_export($this->session, true)));
     }
 
     /**
@@ -326,6 +331,8 @@ class Version1X extends AbstractSocketIO
      */
     protected function upgradeTransport()
     {
+        $this->logger->debug('Starting websocket upgrade');
+
         // set timeout based on handshake response
         $this->options['timeout'] = $this->session->getTimeout();
 
@@ -385,6 +392,8 @@ class Version1X extends AbstractSocketIO
         if ($this->options['version'] === 2) {
             $this->read();
         }
+
+        $this->logger->debug('Websocket upgrade completed');
     }
 
     /**
@@ -393,6 +402,7 @@ class Version1X extends AbstractSocketIO
     public function keepAlive()
     {
         if ($this->session->needsHeartbeat()) {
+            $this->logger->debug('Sending PING');
             $this->write(static::PROTO_PING);
         }
     }

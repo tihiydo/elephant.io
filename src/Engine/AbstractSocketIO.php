@@ -11,6 +11,8 @@
 
 namespace ElephantIO\Engine;
 
+use Psr\Log\LoggerInterface;
+
 use DomainException;
 use RuntimeException;
 
@@ -28,6 +30,13 @@ abstract class AbstractSocketIO implements EngineInterface
     const PACKET_ERROR        = 4;
     const PACKET_BINARY_EVENT = 5;
     const PACKET_BINARY_ACK   = 6;
+
+    /**
+     * Logger.
+     *
+     * @var LoggerInterface
+     */
+    protected $logger = null;
 
     /** @var string[] Parse url result */
     protected $url;
@@ -60,6 +69,24 @@ abstract class AbstractSocketIO implements EngineInterface
         }
 
         $this->options = \array_replace($this->getDefaultOptions(), $options);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see \ElephantIO\EngineInterface::setLogger()
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see \ElephantIO\EngineInterface::getLogger()
+     */
+    public function getLogger()
+    {
+        return $this->logger;
     }
 
     /** {@inheritDoc} */
@@ -210,6 +237,7 @@ abstract class AbstractSocketIO implements EngineInterface
         }
 
         $data .= $this->readBytes($length);
+        $this->logger->debug(sprintf('Receiving data: %s', $data));
 
         // decode the payload
         return (string) new Decoder($data);

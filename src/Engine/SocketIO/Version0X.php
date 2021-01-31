@@ -159,6 +159,8 @@ class Version0X extends AbstractSocketIO
             return;
         }
 
+        $this->logger->debug('Starting handshake');
+
         // set timeout to default
         $this->options['timeout'] = $this->getDefaultOptions()['timeout'];
 
@@ -197,11 +199,15 @@ class Version0X extends AbstractSocketIO
         }
         $this->cookies = $cookies;
         $this->session = new Session($handshake['sid'], $handshake['pingInterval'], $handshake['pingTimeout'], $handshake['upgrades']);
+
+        $this->logger->debug(sprintf('Handshake finished with %s', var_export($this->session, true)));
     }
 
     /** Upgrades the transport to WebSocket */
     protected function upgradeTransport()
     {
+        $this->logger->debug('Starting websocket upgrade');
+
         // set timeout based on handshake response
         $this->options['timeout'] = $this->session->getTimeout();
 
@@ -242,5 +248,7 @@ class Version0X extends AbstractSocketIO
         if ($this->socket->getStatusCode() != 101) {
             throw new ServerConnectionFailureException('unable to upgrade to WebSocket');
         }
+
+        $this->logger->debug('Websocket upgrade completed');
     }
 }

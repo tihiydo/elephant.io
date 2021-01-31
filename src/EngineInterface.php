@@ -11,6 +11,8 @@
 
 namespace ElephantIO;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Represents an engine used within ElephantIO to send / receive messages from
  * a websocket real time server
@@ -23,7 +25,23 @@ namespace ElephantIO;
  */
 interface EngineInterface
 {
-    /** Connect to the targeted server */
+    /**
+     * Set logger.
+     *
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger);
+
+    /**
+     * Get logger.
+     *
+     * @return LoggerInterface
+     */
+    public function getLogger();
+
+    /**
+     * Connect to the targeted server
+     */
     public function connect();
 
     /** Closes the connection to the websocket */
@@ -52,10 +70,16 @@ interface EngineInterface
      */
     public function wait($event);
 
-    /** Keeps alive the connection */
+    /**
+     * Keeps alive the connection
+     */
     public function keepAlive();
 
-    /** Gets the name of the engine */
+    /**
+     * Gets the name of the engine
+     *
+     * @return string
+     */
     public function getName();
 
     /**

@@ -36,6 +36,9 @@ class Client
     {
         $this->engine = $engine;
         $this->logger = $logger ?: new NullLogger;
+        if (null === $engine->getLogger()) {
+            $engine->setLogger($this->logger);
+        }
     }
 
     public function __destruct()
