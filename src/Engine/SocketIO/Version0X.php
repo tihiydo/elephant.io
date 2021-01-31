@@ -132,6 +132,7 @@ class Version0X extends AbstractSocketIO
         if ($this->socket) {
             $this->logger->debug('Closing socket connection');
             $this->socket->close();
+            $this->socket = null;
         }
         $this->socket = new Socket($this->url, $this->context, array_merge($this->options, ['logger' => $this->logger]));
         if ($errors = $this->socket->getErrors()) {

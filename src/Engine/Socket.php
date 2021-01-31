@@ -99,6 +99,8 @@ class Socket
 
         if (true === $this->parsed['secured']) {
             $host = 'ssl://' . $host;
+        } else {
+            $host = 'tcp://' . $host;
         }
 
         $this->logger->debug(sprintf('Socket connect %s', $host));
@@ -199,22 +201,27 @@ class Socket
 
         // wait for response
         $header = true;
+        $len = null;
         $this->logger->debug('Waiting for response!!!');
-        while (false !== ($content = fgets($this->handle))) {
+        while (true) {
+            if (!$this->isConnected()) break;
+            if (false === ($content = $header ? fgets($this->handle) : fread($this->handle, $len))) break;
             $this->logger->debug(sprintf('Receive: %s', trim($content)));
             if ($content === $eol && $header) {
-                if (!$skip_body) {
-                    $header = false;
-                } else {
-                    break;
-                }
+                if ($skip_body) break;
+                $header = false;
             } else {
                 if ($header) {
                     $this->result['headers'][] = trim($content);
+                    if (null === $len && 'Content-Length:' === substr($content, 0, 15)) {
+                        $len = (int) trim(substr($content, 16));
+                    }
                 } else {
                     $this->result['body'] .= $content;
+                    if ($len === strlen($this->result['body'])) break;
                 }
             }
+            usleep($this->options['wait']);
         }
 
         return count($this->result['headers']) ? true : false;
