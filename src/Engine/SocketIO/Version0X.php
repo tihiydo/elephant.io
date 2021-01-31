@@ -129,6 +129,10 @@ class Version0X extends AbstractSocketIO
      */
     protected function createSocket()
     {
+        if ($this->socket) {
+            $this->logger->debug('Closing socket connection');
+            $this->socket->close();
+        }
         $this->socket = new Socket($this->url, $this->context, $this->options);
         if ($errors = $this->socket->getErrors()) {
             throw new SocketException($errors[0], $errors[1]);

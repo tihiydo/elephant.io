@@ -71,6 +71,14 @@ class Socket
     }
 
     /**
+     * Destructor.
+     */
+    public function __destruct()
+    {
+        $this->close();
+    }
+
+    /**
      * Initialize.
      */
     protected function initialize()
@@ -306,6 +314,7 @@ class Socket
         if (!is_resource($this->handle)) {
             return;
         }
+        @stream_socket_shutdown($this->handle, STREAM_SHUT_RDWR);
         fclose($this->handle);
         $this->handle = null;
     }
