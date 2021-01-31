@@ -267,9 +267,9 @@ abstract class AbstractSocketIO implements EngineInterface
     protected function getDefaultOptions()
     {
         return [
-            'debug' => false,
-            'wait' => 50 * 1000, // 50 ms
-            'timeout' => \ini_get("default_socket_timeout")
+            'debug'     => false,
+            'wait'      => 50, // 50 ms
+            'timeout'   => \ini_get("default_socket_timeout")
         ];
     }
 }
