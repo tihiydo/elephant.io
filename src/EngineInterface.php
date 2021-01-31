@@ -12,6 +12,7 @@
 namespace ElephantIO;
 
 use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
 
 /**
  * Represents an engine used within ElephantIO to send / receive messages from
@@ -23,22 +24,8 @@ use Psr\Log\LoggerInterface;
  *
  * @author Baptiste Clavié <baptiste@wisembly.com>
  */
-interface EngineInterface
+interface EngineInterface extends LoggerAwareInterface
 {
-    /**
-     * Set logger.
-     *
-     * @param LoggerInterface $logger
-     */
-    public function setLogger(LoggerInterface $logger);
-
-    /**
-     * Get logger.
-     *
-     * @return LoggerInterface
-     */
-    public function getLogger();
-
     /**
      * Connect to the targeted server
      */

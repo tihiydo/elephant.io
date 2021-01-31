@@ -12,6 +12,7 @@
 namespace ElephantIO\Engine;
 
 use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareTrait;
 
 use DomainException;
 use RuntimeException;
@@ -23,6 +24,8 @@ use ElephantIO\Exception\UnsupportedActionException;
 
 abstract class AbstractSocketIO implements EngineInterface
 {
+    use LoggerAwareTrait;
+
     const PACKET_CONNECT      = 0;
     const PACKET_DISCONNECT   = 1;
     const PACKET_EVENT        = 2;
@@ -30,13 +33,6 @@ abstract class AbstractSocketIO implements EngineInterface
     const PACKET_ERROR        = 4;
     const PACKET_BINARY_EVENT = 5;
     const PACKET_BINARY_ACK   = 6;
-
-    /**
-     * Logger.
-     *
-     * @var LoggerInterface
-     */
-    protected $logger = null;
 
     /** @var string[] Parse url result */
     protected $url;
@@ -69,24 +65,6 @@ abstract class AbstractSocketIO implements EngineInterface
         }
 
         $this->options = \array_replace($this->getDefaultOptions(), $options);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \ElephantIO\EngineInterface::setLogger()
-     */
-    public function setLogger(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * {@inheritDoc}
-     * @see \ElephantIO\EngineInterface::getLogger()
-     */
-    public function getLogger()
-    {
-        return $this->logger;
     }
 
     /** {@inheritDoc} */
