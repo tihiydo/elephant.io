@@ -11,6 +11,9 @@
 
 namespace ElephantIO\Engine;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
 use ElephantIO\Exception\MalformedUrlException;
 
 class Socket
@@ -56,6 +59,11 @@ class Socket
     protected $metadata = null;
 
     /**
+     * @var LoggerInterface
+     */
+    protected $logger = null;
+
+    /**
      * Constructor.
      *
      * @param string $url
@@ -67,6 +75,7 @@ class Socket
         $this->url = $url;
         $this->context = $context;
         $this->options = $options;
+        $this->logger = isset($options['logger']) && $options['logger'] ? $options['logger'] : new NullLogger();
         $this->initialize();
     }
 
@@ -92,6 +101,7 @@ class Socket
             $host = 'ssl://' . $host;
         }
 
+        $this->logger->debug(sprintf('Socket connect %s', $host));
         $this->handle = @stream_socket_client($host, $errors[0], $errors[1], $timeout, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT,
             stream_context_create($this->context));
 
@@ -189,7 +199,9 @@ class Socket
 
         // wait for response
         $header = true;
+        $this->logger->debug('Waiting for response!!!');
         while (false !== ($content = fgets($this->handle))) {
+            $this->logger->debug(sprintf('Receive: %s', trim($content)));
             if ($content === $eol && $header) {
                 if (!$skip_body) {
                     $header = false;
