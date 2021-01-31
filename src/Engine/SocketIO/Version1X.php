@@ -17,6 +17,7 @@ use ElephantIO\Payload\Encoder;
 use ElephantIO\Engine\AbstractSocketIO;
 use ElephantIO\Engine\Socket;
 use ElephantIO\Engine\SequentialStream;
+use ElephantIO\Engine\Yeast;
 
 use ElephantIO\Exception\SocketException;
 use ElephantIO\Exception\UnsupportedTransportException;
@@ -43,6 +44,20 @@ class Version1X extends AbstractSocketIO
     const TRANSPORT_POLLING   = 'polling';
     const TRANSPORT_WEBSOCKET = 'websocket';
 
+    /**
+     * Last socket connect time.
+     *
+     * @var float
+     */
+    protected $ctime = null;
+
+    /**
+     * Wait time before creating a new socket.
+     *
+     * @var integer
+     */
+    protected $cwait = 50;
+
     /** {@inheritDoc} */
     public function connect()
     {
@@ -51,6 +66,7 @@ class Version1X extends AbstractSocketIO
         }
 
         $this->handshake();
+        $this->connectNamespace();
         $this->upgradeTransport();
     }
 
@@ -157,6 +173,13 @@ class Version1X extends AbstractSocketIO
             $this->socket->close();
             $this->socket = null;
         }
+        if (null !== $this->ctime) {
+            $delta = (microtime(true) - $this->ctime) * 1000;
+            if ($delta < $this->cwait) {
+                usleep($this->cwait);
+            }
+        }
+        $this->ctime = microtime(true);
         $this->socket = new Socket($this->url, $this->context, array_merge($this->options, ['logger' => $this->logger]));
         if ($errors = $this->socket->getErrors()) {
             throw new SocketException($errors[0], $errors[1]);
@@ -247,9 +270,16 @@ class Version1X extends AbstractSocketIO
             switch ($packet->proto) {
                 case static::PROTO_MESSAGE:
                     if (null !== ($data = json_decode($seq->getData(), true))) {
-                        if ($packet->type === static::PACKET_EVENT && 2 === count($data)) {
-                            $packet->event = $data[0];
-                            $packet->data = $data[1];
+                        switch ($packet->type) {
+                            case static::PACKET_EVENT:
+                                if (2 === count($data)) {
+                                    $packet->event = $data[0];
+                                    $packet->data = $data[1];
+                                }
+                                break;
+                            default:
+                                $packet->data = $data;
+                                break;
                         }
                     }
                     break;
@@ -266,6 +296,74 @@ class Version1X extends AbstractSocketIO
         }
     }
 
+    /**
+     * Get URI.
+     *
+     * @param array $query
+     * @return string
+     */
+    protected function getUri($query)
+    {
+        $url = $this->socket->getParsedUrl();
+        if (isset($url['query']) && $url['query']) {
+            $query = array_replace($query, $url['query']);
+        }
+        return sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query));
+    }
+
+    /**
+     * Perform connection namespace request.
+     */
+    protected function requestNamespace()
+    {
+        $this->logger->debug('Requesting namespace');
+
+        $this->createSocket();
+
+        $uri = $this->getUri([
+            'EIO'       => $this->options['version'],
+            'transport' => $this->options['transport'],
+            't'         => Yeast::yeast(),
+            'sid'       => $this->session->id,
+        ]);
+        $payload = static::PROTO_MESSAGE . static::PACKET_CONNECT;
+
+        $this->socket->request($uri, ['Connection: close'], ['method' => 'POST', 'payload' => $payload]);
+        if ($this->socket->getStatusCode() != 200) {
+            throw new ServerConnectionFailureException('unable to perform namespace request');
+        }
+
+        $this->logger->debug('Requesting namespace completed');
+    }
+
+    /**
+     * Perform connection namespace confirmation.
+     */
+    protected function confirmNamespace()
+    {
+        $this->logger->debug('Confirm namespace');
+
+        $this->createSocket();
+
+        $uri = $this->getUri([
+            'EIO'       => $this->options['version'],
+            'transport' => $this->options['transport'],
+            't'         => Yeast::yeast(),
+            'sid'       => $this->session->id,
+        ]);
+
+        $sid = null;
+        $this->socket->request($uri, ['Connection: close']);
+        if (($packet = $this->decodePacket($this->socket->getBody())) && $packet->data && isset($packet->data['sid'])) {
+            $sid = $packet->data['sid'];
+        }
+        if (!$sid) {
+            throw new ServerConnectionFailureException('unable to perform namespace confirmation');
+        }
+
+        $this->logger->debug('Confirm namespace completed');
+    }
+
     /** Does the handshake with the Socket.io server and populates the `session` value object */
     protected function handshake()
     {
@@ -280,19 +378,17 @@ class Version1X extends AbstractSocketIO
 
         $this->createSocket();
 
-        $url = $this->socket->getParsedUrl();
         $query = [
             'EIO'       => $this->options['version'],
-            'transport' => $this->options['transport']
+            'transport' => $this->options['transport'],
+            't'         => Yeast::yeast(),
         ];
         if ($this->options['use_b64']) {
             $query['b64'] = 1;
         }
-        if (isset($url['query'])) {
-            $query = array_replace($query, $url['query']);
-        }
+        $uri = $this->getUri($query);
 
-        $this->socket->request(sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query)), ['Connection: close']);
+        $this->socket->request($uri, ['Connection: close']);
         if ($this->socket->getStatusCode() != 200) {
             throw new ServerConnectionFailureException('unable to perform handshake');
         }
@@ -328,11 +424,32 @@ class Version1X extends AbstractSocketIO
     }
 
     /**
+     * Connect to namespace for protocol version 4.
+     */
+    protected function connectNamespace()
+    {
+        if ($this->options['version'] < 4) {
+            return;
+        }
+
+        $this->logger->debug('Starting namespace connect');
+
+        // set timeout based on handshake response
+        $this->options['timeout'] = $this->session->getTimeout();
+
+        $this->requestNamespace();
+        $this->confirmNamespace();
+
+        $this->logger->debug('Namespace connect completed');
+    }
+
+    /**
      * Upgrades the transport to WebSocket
      *
      * FYI:
      * Version "2" is used for the EIO param by socket.io v1
      * Version "3" is used by socket.io v2
+     * Version "4" is used by socket.io v3
      */
     protected function upgradeTransport()
     {
@@ -343,10 +460,10 @@ class Version1X extends AbstractSocketIO
 
         $this->createSocket();
 
-        $url = $this->socket->getParsedUrl();
         $query = [
             'EIO'       => $this->options['version'],
             'transport' => static::TRANSPORT_WEBSOCKET,
+            't'         => Yeast::yeast(),
             'sid'       => $this->session->id,
         ];
 
@@ -354,7 +471,7 @@ class Version1X extends AbstractSocketIO
             $query['b64'] = 1;
         }
 
-        $uri = sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query));
+        $uri = $this->getUri($query);
 
         $hash = sha1(uniqid(mt_rand(), true), true);
 
@@ -376,7 +493,7 @@ class Version1X extends AbstractSocketIO
         }
 
         $headers = [
-            'Upgrade: WebSocket',
+            'Upgrade: websocket',
             'Connection: Upgrade',
             sprintf('Sec-WebSocket-Key: %s', $key),
             'Sec-WebSocket-Version: 13',
