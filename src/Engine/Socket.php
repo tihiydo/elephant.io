@@ -162,9 +162,24 @@ class Socket
         $skip_body  = isset($options['skip_body']) ? $options['skip_body'] : false;
         $payload    = isset($options['payload']) ? $options['payload'] : null;
 
+        if ($payload) {
+            $contentType = null;
+            foreach ($headers as $header) {
+                if (substr($header, 0, 13) === 'Content-type:') {
+                    $contentType = $header;
+                    break;
+                }
+            }
+            if (null === $contentType) {
+                $payload = utf8_encode($payload);
+                $headers[] = 'Content-type: text/plain;charset=UTF-8';
+                $headers[] = 'Content-Length: ' . strlen($payload);
+            }
+        }
+
         $request = array_merge([
             sprintf('%s %s HTTP/1.1', strtoupper($method), $uri),
-            sprintf('Host: %s', $this->parsed['host']/* . ':' . $this->parsed['port']*/),
+            sprintf('Host: %s', $this->parsed['host'] . ':' . $this->parsed['port']),
         ], $headers);
         $request = implode($eol, $request) . $eol . $eol . $payload;
 
