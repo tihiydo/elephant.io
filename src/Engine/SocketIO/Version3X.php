@@ -19,7 +19,7 @@ namespace ElephantIO\Engine\SocketIO;
  * @author Baptiste Clavié <baptiste@wisembly.com>
  * @link https://tools.ietf.org/html/rfc6455#section-5.2 Websocket's RFC
  */
-class Version3X extends Version2X
+class Version3X extends Version1X
 {
 
     /** {@inheritDoc} */

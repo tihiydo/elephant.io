@@ -135,7 +135,11 @@ class Version1X extends AbstractSocketIO
         }
 
         $payload = $this->getPayload($code, $message);
-        $bytes = $this->socket->send((string) $payload);
+        if (count($fragments = $payload->encode()->getFragments()) > 1) {
+            throw new \RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
+                $this->options['max_payload']));
+        }
+        $bytes = $this->socket->send($fragments[0]);
 
         // wait a little bit of time after this message was sent
         \usleep((int) $this->options['wait']);
@@ -157,6 +161,7 @@ class Version1X extends AbstractSocketIO
         $defaults['version']   = 2;
         $defaults['use_b64']   = false;
         $defaults['transport'] = static::TRANSPORT_POLLING;
+        $defaults['max_payload'] = 10e7;
 
         return $defaults;
     }
@@ -199,8 +204,10 @@ class Version1X extends AbstractSocketIO
         if (!is_int($code) || static::PROTO_OPEN > $code || static::PROTO_NOOP < $code) {
             throw new \InvalidArgumentException('Wrong message type when trying to write on the socket');
         }
+        $encoder = new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
+        $encoder->setMaxPayload($this->options['max_payload']);
 
-        return new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
+        return $encoder;
     }
 
     /**
