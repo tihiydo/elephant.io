@@ -63,7 +63,7 @@ class Decoder extends AbstractPayload implements Countable
         $payloadOffset = 2;
 
         if ($length > 125) {
-            $payloadOffset = (0xFFFF < $length && 0xFFFFFFFF >= $length) ? 6 : 4;
+            $payloadOffset += (0xFFFF >= $length) ? 2 : 8;
         }
 
         $payload = \implode('', \array_map('chr', $payload));
@@ -94,8 +94,8 @@ class Decoder extends AbstractPayload implements Countable
 
         $length = \ord($this->payload[1]) & 0x7F;
 
-        if ($length == 126 || $length == 127) {
-            $length = \unpack('H*', \substr($this->payload, 2, ($length == 126 ? 2 : 4)));
+        if ($length === 126 || $length === 127) {
+            $length = \unpack('H*', \substr($this->payload, 2, ($length === 126 ? 2 : 8)));
             $length = \hexdec($length[1]);
         }
 

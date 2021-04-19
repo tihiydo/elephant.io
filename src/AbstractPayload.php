@@ -23,18 +23,18 @@ namespace ElephantIO;
  */
 abstract class AbstractPayload
 {
-    const OPCODE_NON_CONTROL_RESERVED_1 = 0x3;
-    const OPCODE_NON_CONTROL_RESERVED_2 = 0x4;
-    const OPCODE_NON_CONTROL_RESERVED_3 = 0x5;
-    const OPCODE_NON_CONTROL_RESERVED_4 = 0x6;
-    const OPCODE_NON_CONTROL_RESERVED_5 = 0x7;
-
     const OPCODE_CONTINUE = 0x0;
     const OPCODE_TEXT     = 0x1;
     const OPCODE_BINARY   = 0x2;
     const OPCODE_CLOSE    = 0x8;
     const OPCODE_PING     = 0x9;
     const OPCODE_PONG     = 0xA;
+
+    const OPCODE_NON_CONTROL_RESERVED_1 = 0x3;
+    const OPCODE_NON_CONTROL_RESERVED_2 = 0x4;
+    const OPCODE_NON_CONTROL_RESERVED_3 = 0x5;
+    const OPCODE_NON_CONTROL_RESERVED_4 = 0x6;
+    const OPCODE_NON_CONTROL_RESERVED_5 = 0x7;
 
     const OPCODE_CONTROL_RESERVED_1 = 0xB;
     const OPCODE_CONTROL_RESERVED_2 = 0xC;
@@ -49,6 +49,31 @@ abstract class AbstractPayload
     protected $maskKey = "\x00\x00\x00\x00";
 
     protected $opCode;
+
+    protected $maxPayload = 0;
+
+    /**
+     * Get maximum payload length.
+     *
+     * @return int
+     */
+    public function getMaxPayload()
+    {
+        return $this->maxPayload;
+    }
+
+    /**
+     * Set maximum payload length.
+     *
+     * @param int $length
+     * @return \ElephantIO\AbstractPayload
+     */
+    public function setMaxPayload($length)
+    {
+        $this->maxPayload = $length;
+
+        return $this;
+    }
 
     /**
      * Mask a data according to the current mask key
