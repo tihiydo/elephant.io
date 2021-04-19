@@ -14,6 +14,11 @@ namespace ElephantIO;
 use Psr\Log\NullLogger;
 use Psr\Log\LoggerInterface;
 
+use ElephantIO\Engine\SocketIO\Version0X;
+use ElephantIO\Engine\SocketIO\Version1X;
+use ElephantIO\Engine\SocketIO\Version2X;
+use ElephantIO\Engine\SocketIO\Version3X;
+use ElephantIO\Engine\SocketIO\Version4X;
 use ElephantIO\Exception\SocketException;
 
 /**
@@ -24,6 +29,12 @@ use ElephantIO\Exception\SocketException;
  */
 class Client
 {
+    const CLIENT_0X = 0;
+    const CLIENT_1X = 1;
+    const CLIENT_2X = 2;
+    const CLIENT_3X = 3;
+    const CLIENT_4X = 4;
+
     /** @var EngineInterface */
     private $engine;
 
@@ -147,5 +158,32 @@ class Client
     public function getEngine()
     {
         return $this->engine;
+    }
+
+    /**
+     * Create socket.io engine.
+     *
+     * @param int $version
+     * @param string $url
+     * @param array $options
+     * @throws \InvalidArgumentException
+     * @return \ElephantIO\Engine\AbstractSocketIO
+     */
+    public static function engine($version, $url, $options = [])
+    {
+        switch ($version) {
+            case static::CLIENT_0X:
+                return new Version0X($url, $options);
+            case static::CLIENT_1X:
+                return new Version1X($url, $options);
+            case static::CLIENT_2X:
+                return new Version2X($url, $options);
+            case static::CLIENT_3X:
+                return new Version3X($url, $options);
+            case static::CLIENT_4X:
+                return new Version4X($url, $options);
+            default:
+                throw new \InvalidArgumentException(sprintf('Unknown engine version %d!', $version));
+        }
     }
 }
