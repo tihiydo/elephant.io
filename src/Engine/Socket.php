@@ -189,6 +189,10 @@ class Socket
             }
         }
 
+        if(isset($this->options['headers'])){
+            $headers = array_merge($headers, $this->options['headers']);
+        }
+
         $request = array_merge([
             sprintf('%s %s HTTP/1.1', strtoupper($method), $uri),
             sprintf('Host: %s', $this->parsed['host'] . ':' . $this->parsed['port']),
