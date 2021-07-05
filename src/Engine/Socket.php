@@ -213,7 +213,7 @@ class Socket
             } else {
                 if ($header) {
                     $this->result['headers'][] = trim($content);
-                    if (null === $len && 'Content-Length:' === substr($content, 0, 15)) {
+                    if (null === $len && 0 === stripos($content, 'Content-Length:')) {
                         $len = (int) trim(substr($content, 16));
                     }
                 } else {
