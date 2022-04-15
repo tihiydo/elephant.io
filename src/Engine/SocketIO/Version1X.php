@@ -379,7 +379,7 @@ class Version1X extends AbstractSocketIO
         $this->logger->debug('Starting handshake');
 
         // set timeout to default
-        $this->options['timeout'] = $this->getDefaultOptions()['timeout'];
+        $this->options['timeout'] = $this->defaults['timeout'];
 
         $this->createSocket();
 

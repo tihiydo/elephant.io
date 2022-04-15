@@ -42,6 +42,9 @@ abstract class AbstractSocketIO implements EngineInterface
     /** @var Session Session information */
     protected $session;
 
+    /** @var mixed[] Array of default options for the engine */
+    protected $defaults;
+
     /** @var mixed[] Array of options for the engine */
     protected $options;
 
@@ -63,12 +66,12 @@ abstract class AbstractSocketIO implements EngineInterface
             unset($options['context']);
         }
 
-        $defaults = array_merge([
+        $this->defaults = array_merge([
             'debug'     => false,
             'wait'      => 50, // 50 ms
             'timeout'   => \ini_get('default_socket_timeout')
         ], $this->getDefaultOptions());
-        $this->options = \array_replace($defaults, $options);
+        $this->options = \array_replace($this->defaults, $options);
     }
 
     /**
