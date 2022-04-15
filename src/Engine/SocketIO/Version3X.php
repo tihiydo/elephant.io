@@ -31,10 +31,8 @@ class Version3X extends Version1X
     /** {@inheritDoc} */
     protected function getDefaultOptions()
     {
-        $defaults = parent::getDefaultOptions();
-
-        $defaults['version'] = 4;
-
-        return $defaults;
+        return array_merge(parent::getDefaultOptions(), [
+            'version' => 4,
+        ]);
     }
 }

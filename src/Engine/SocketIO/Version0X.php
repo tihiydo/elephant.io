@@ -114,12 +114,10 @@ class Version0X extends AbstractSocketIO
     /** {@inheritDoc} */
     protected function getDefaultOptions()
     {
-        $defaults = parent::getDefaultOptions();
-
-        $defaults['protocol']  = 1;
-        $defaults['transport'] = static::TRANSPORT_WEBSOCKET;
-
-        return $defaults;
+        return [
+            'protocol' => 1,
+            'transport' => static::TRANSPORT_WEBSOCKET,
+        ];
     }
 
     /**

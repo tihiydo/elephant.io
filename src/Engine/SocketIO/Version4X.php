@@ -31,11 +31,9 @@ class Version4X extends Version1X
     /** {@inheritDoc} */
     protected function getDefaultOptions()
     {
-        $defaults = parent::getDefaultOptions();
-
-        $defaults['version'] = 4;
-        $defaults['max_payload'] = 1e6;
-
-        return $defaults;
+        return array_merge(parent::getDefaultOptions(), [
+            'version' => 4,
+            'max_payload' => 1e6,
+        ]);
     }
 }

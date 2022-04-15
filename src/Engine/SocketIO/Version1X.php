@@ -156,14 +156,12 @@ class Version1X extends AbstractSocketIO
     /** {@inheritDoc} */
     protected function getDefaultOptions()
     {
-        $defaults = parent::getDefaultOptions();
-
-        $defaults['version']   = 2;
-        $defaults['use_b64']   = false;
-        $defaults['transport'] = static::TRANSPORT_POLLING;
-        $defaults['max_payload'] = 10e7;
-
-        return $defaults;
+        return [
+            'version' => 2,
+            'use_b64' => false,
+            'transport' => static::TRANSPORT_POLLING,
+            'max_payload' => 10e7,
+        ];
     }
 
     /**

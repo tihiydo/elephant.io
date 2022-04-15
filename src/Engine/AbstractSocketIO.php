@@ -11,7 +11,6 @@
 
 namespace ElephantIO\Engine;
 
-use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareTrait;
 
 use DomainException;
@@ -64,7 +63,12 @@ abstract class AbstractSocketIO implements EngineInterface
             unset($options['context']);
         }
 
-        $this->options = \array_replace($this->getDefaultOptions(), $options);
+        $defaults = array_merge([
+            'debug'     => false,
+            'wait'      => 50, // 50 ms
+            'timeout'   => \ini_get('default_socket_timeout')
+        ], $this->getDefaultOptions());
+        $this->options = \array_replace($defaults, $options);
     }
 
     /**
@@ -75,6 +79,16 @@ abstract class AbstractSocketIO implements EngineInterface
     public function getOptions()
     {
       return $this->options;
+    }
+
+    /**
+     * Check if connection has made.
+     *
+     * @return boolean
+     */
+    public function isConnected()
+    {
+        return $this->socket ? $this->socket->isConnected() : false;
     }
 
     /** {@inheritDoc} */
@@ -117,7 +131,7 @@ abstract class AbstractSocketIO implements EngineInterface
     /** {@inheritDoc} */
     public function wait($event)
     {
-      throw new UnsupportedActionException($this, 'wait');
+        throw new UnsupportedActionException($this, 'wait');
     }
 
     /**
@@ -168,7 +182,7 @@ abstract class AbstractSocketIO implements EngineInterface
         $data = $this->readBytes(2);
         $bytes = \unpack('C*', $data);
 
-        if (empty($bytes[2])){
+        if (empty($bytes[2])) {
             return;
         }
 
@@ -238,26 +252,12 @@ abstract class AbstractSocketIO implements EngineInterface
     }
 
     /**
-     * Check if connection has made.
-     *
-     * @return boolean
-     */
-    public function isConnected()
-    {
-        return $this->socket ? $this->socket->isConnected() : false;
-    }
-
-    /**
      * Get the defaults options
      *
      * @return array mixed[] Defaults options for this engine
      */
     protected function getDefaultOptions()
     {
-        return [
-            'debug'     => false,
-            'wait'      => 50, // 50 ms
-            'timeout'   => \ini_get("default_socket_timeout")
-        ];
+        return [];
     }
 }

@@ -147,7 +147,7 @@ class Socket
     /**
      * Get parsed URL.
      *
-     * @return string[]
+     * @return mixed[]
      */
     public function getParsedUrl()
     {
@@ -289,7 +289,7 @@ class Socket
         $parsed = parse_url($url);
 
         if (false === $parsed) {
-          throw new MalformedUrlException($url);
+            throw new MalformedUrlException($url);
         }
 
         $result = array_replace([
