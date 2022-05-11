@@ -220,7 +220,7 @@ class Version1X extends AbstractSocketIO
         $seq = new SequentialStream($data);
         while (!$seq->isEof()) {
             if (null === ($len = $this->options['version'] >= 4 ? strlen($seq->getData()) : $seq->readUntil(':'))) {
-                throw new \RuntimeException('Data delimeter not found!');
+                throw new \RuntimeException('Data delimiter not found!');
             }
 
             $dseq = new SequentialStream($seq->read((int) $len));

@@ -45,19 +45,19 @@ class SequentialStream
     }
 
     /**
-     * Read data up to delimeter.
+     * Read data up to delimiter.
      *
-     * @param string $delimeter
+     * @param string $delimiter
      * @param array $noskips
      * @return string
      */
-    public function readUntil($delimeter = ',', $noskips = [])
+    public function readUntil($delimiter = ',', $noskips = [])
     {
         if (!$this->isEof()) {
-            list($p, $d) = $this->getPos($this->data, $delimeter);
+            list($p, $d) = $this->getPos($this->data, $delimiter);
             if (false !== $p) {
                 $result = substr($this->data, 0, $p);
-                // skip delimeter
+                // skip delimiter
                 if (!in_array($d, $noskips)) {
                     $p++;
                 }
@@ -69,18 +69,18 @@ class SequentialStream
     }
 
     /**
-     * Get first position of delimeters.
+     * Get first position of delimiters.
      *
      * @param string $data
-     * @param string $delimeter
+     * @param string $delimiter
      * @return boolean|number
      */
-    protected function getPos($data, $delimeter)
+    protected function getPos($data, $delimiter)
     {
         $pos = false;
         $delim = null;
-        for ($i = 0; $i < strlen($delimeter); $i++) {
-            $d = substr($delimeter, $i, 1);
+        for ($i = 0; $i < strlen($delimiter); $i++) {
+            $d = substr($delimiter, $i, 1);
             if (false !== ($p = strpos($data, $d))) {
                 if (false === $pos || $p < $pos) {
                     $pos = $p;
