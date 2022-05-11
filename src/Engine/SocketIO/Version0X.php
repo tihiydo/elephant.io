@@ -203,7 +203,7 @@ class Version0X extends AbstractSocketIO
         $this->cookies = $cookies;
         $this->session = new Session($handshake['sid'], $handshake['pingInterval'], $handshake['pingTimeout'], $handshake['upgrades']);
 
-        $this->logger->debug(sprintf('Handshake finished with %s', var_export($this->session, true)));
+        $this->logger->debug(sprintf('Handshake finished with %s', (string) $this->session));
     }
 
     /** Upgrades the transport to WebSocket */

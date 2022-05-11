@@ -425,7 +425,7 @@ class Version1X extends AbstractSocketIO
             $handshake['upgrades']
         );
 
-        $this->logger->debug(sprintf('Handshake finished with %s', var_export($this->session, true)));
+        $this->logger->debug(sprintf('Handshake finished with %s', (string) $this->session));
     }
 
     /**

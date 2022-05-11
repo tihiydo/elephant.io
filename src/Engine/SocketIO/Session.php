@@ -87,7 +87,7 @@ class Session
     /**
      * Checks whether a new heartbeat is necessary, and does a new heartbeat if it is the case
      *
-     * @return Boolean true if there was a heartbeat, false otherwise
+     * @return bool true if there was a heartbeat, false otherwise
      */
     public function needsHeartbeat()
     {
@@ -98,5 +98,15 @@ class Session
         }
 
         return false;
+    }
+
+    public function __toString()
+    {
+        return json_encode([
+            'id' => $this->id,
+            'heartbeat' => $this->heartbeat,
+            'timeouts' => $this->timeouts,
+            'upgrades' => $this->upgrades,
+        ]);
     }
 }
