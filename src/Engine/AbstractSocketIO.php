@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -17,9 +18,9 @@ use DomainException;
 use RuntimeException;
 
 use ElephantIO\EngineInterface;
-use ElephantIO\Engine\SocketIO\Session;
-use ElephantIO\Payload\Decoder;
+use ElephantIO\StreamInterface;
 use ElephantIO\Exception\UnsupportedActionException;
+use ElephantIO\Payload\Decoder;
 
 abstract class AbstractSocketIO implements EngineInterface
 {
@@ -48,8 +49,8 @@ abstract class AbstractSocketIO implements EngineInterface
     /** @var mixed[] Array of options for the engine */
     protected $options;
 
-    /** @var Socket Resource to the connected stream */
-    protected $socket;
+    /** @var StreamInterface Resource to the connected stream */
+    protected $stream;
 
     /** @var string the namespace of the next message */
     protected $namespace = '';
@@ -91,7 +92,7 @@ abstract class AbstractSocketIO implements EngineInterface
      */
     public function isConnected()
     {
-        return $this->socket ? $this->socket->isConnected() : false;
+        return $this->stream ? $this->stream->connected() : false;
     }
 
     /** {@inheritDoc} */
@@ -148,17 +149,16 @@ abstract class AbstractSocketIO implements EngineInterface
         $data = '';
         $chunk = null;
         while ($bytes > 0) {
-            if (!$this->socket->isConnected()) {
-                throw new \RuntimeException('Socket disconnected');
+            if (!$this->stream->connected()) {
+                throw new \RuntimeException('Stream disconnected');
             }
             $this->keepAlive();
-            if (false === ($chunk = \fread($this->socket->getHandle(), $bytes))) {
+            if (false === ($chunk = $this->stream->read($bytes))) {
                 break;
             }
             $bytes -= \strlen($chunk);
             $data .= $chunk;
         }
-
         if (false === $chunk) {
             throw new \RuntimeException('Could not read from stream');
         }
@@ -173,7 +173,7 @@ abstract class AbstractSocketIO implements EngineInterface
      */
     public function read()
     {
-        if (!$this->socket || !\is_resource($this->socket->getHandle())) {
+        if (!$this->stream || !$this->stream->connected()) {
             return;
         }
 
@@ -245,7 +245,7 @@ abstract class AbstractSocketIO implements EngineInterface
         $this->logger->debug(sprintf('Receiving data: %s', $data));
 
         // decode the payload
-        return (string) new Decoder($data);
+        return new Decoder($data);
     }
 
     /** {@inheritDoc} */

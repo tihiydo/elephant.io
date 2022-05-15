@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -13,15 +14,15 @@ namespace ElephantIO\Engine\SocketIO;
 
 use InvalidArgumentException;
 
-use ElephantIO\Payload\Encoder;
+use ElephantIO\Yeast;
 use ElephantIO\Engine\AbstractSocketIO;
-use ElephantIO\Engine\Socket;
-use ElephantIO\Engine\SequentialStream;
-use ElephantIO\Engine\Yeast;
-
+use ElephantIO\Engine\Session;
 use ElephantIO\Exception\SocketException;
 use ElephantIO\Exception\UnsupportedTransportException;
 use ElephantIO\Exception\ServerConnectionFailureException;
+use ElephantIO\Payload\Encoder;
+use ElephantIO\Stream\AbstractStream;
+use ElephantIO\Stream\SequentialStream;
 
 /**
  * Implements the dialog with Socket.IO version 1.x
@@ -79,8 +80,8 @@ class Version1X extends AbstractSocketIO
 
         $this->write(static::PROTO_CLOSE);
 
-        $this->socket->close();
-        $this->socket = null;
+        $this->stream->close();
+        $this->stream = null;
         $this->session = null;
         $this->cookies = [];
     }
@@ -139,7 +140,7 @@ class Version1X extends AbstractSocketIO
             throw new \RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
                 $this->options['max_payload']));
         }
-        $bytes = $this->socket->send($fragments[0]);
+        $bytes = $this->stream->write($fragments[0]);
 
         // wait a little bit of time after this message was sent
         \usleep((int) $this->options['wait']);
@@ -171,10 +172,10 @@ class Version1X extends AbstractSocketIO
      */
     protected function createSocket()
     {
-        if ($this->socket) {
+        if ($this->stream) {
             $this->logger->debug('Closing socket connection');
-            $this->socket->close();
-            $this->socket = null;
+            $this->stream->close();
+            $this->stream = null;
         }
         if (null !== $this->ctime) {
             $delta = (microtime(true) - $this->ctime) * 1000;
@@ -183,8 +184,8 @@ class Version1X extends AbstractSocketIO
             }
         }
         $this->ctime = microtime(true);
-        $this->socket = new Socket($this->url, $this->context, array_merge($this->options, ['logger' => $this->logger]));
-        if ($errors = $this->socket->getErrors()) {
+        $this->stream = AbstractStream::create($this->url, $this->context, array_merge($this->options, ['logger' => $this->logger]));
+        if ($errors = $this->stream->getErrors()) {
             throw new SocketException($errors[0], $errors[1]);
         }
     }
@@ -309,7 +310,7 @@ class Version1X extends AbstractSocketIO
      */
     protected function getUri($query)
     {
-        $url = $this->socket->getParsedUrl();
+        $url = $this->stream->getUrl()->getParsed();
         if (isset($url['query']) && $url['query']) {
             $query = array_replace($query, $url['query']);
         }
@@ -333,8 +334,8 @@ class Version1X extends AbstractSocketIO
         ]);
         $payload = static::PROTO_MESSAGE . static::PACKET_CONNECT;
 
-        $this->socket->request($uri, ['Connection: close'], ['method' => 'POST', 'payload' => $payload]);
-        if ($this->socket->getStatusCode() != 200) {
+        $this->stream->request($uri, ['Connection: close'], ['method' => 'POST', 'payload' => $payload]);
+        if ($this->stream->getStatusCode() != 200) {
             throw new ServerConnectionFailureException('unable to perform namespace request');
         }
 
@@ -358,8 +359,8 @@ class Version1X extends AbstractSocketIO
         ]);
 
         $sid = null;
-        $this->socket->request($uri, ['Connection: close']);
-        if (($packet = $this->decodePacket($this->socket->getBody())) && $packet->data && isset($packet->data['sid'])) {
+        $this->stream->request($uri, ['Connection: close']);
+        if (($packet = $this->decodePacket($this->stream->getBody())) && $packet->data && isset($packet->data['sid'])) {
             $sid = $packet->data['sid'];
         }
         if (!$sid) {
@@ -393,13 +394,13 @@ class Version1X extends AbstractSocketIO
         }
         $uri = $this->getUri($query);
 
-        $this->socket->request($uri, ['Connection: close']);
-        if ($this->socket->getStatusCode() != 200) {
+        $this->stream->request($uri, ['Connection: close']);
+        if ($this->stream->getStatusCode() != 200) {
             throw new ServerConnectionFailureException('unable to perform handshake');
         }
 
         $handshake = null;
-        if (count($data = $this->decodeData($this->socket->getBody()))) {
+        if (count($data = $this->decodeData($this->stream->getBody()))) {
             if ($data = $this->pickData($data, static::PACKET_CONNECT)) {
                 $handshake = $data->data;
             }
@@ -410,7 +411,7 @@ class Version1X extends AbstractSocketIO
         }
 
         $cookies = [];
-        foreach ($this->socket->getHeaders() as $header) {
+        foreach ($this->stream->getHeaders() as $header) {
             $matches = null;
             if (preg_match('/^Set-Cookie:\s*([^;]*)/i', $header, $matches)) {
                 $cookies[] = $matches[1];
@@ -508,8 +509,8 @@ class Version1X extends AbstractSocketIO
         if (!empty($this->cookies)) {
             $headers[] = sprintf('Cookie: %s', implode('; ', $this->cookies));
         }
-        $this->socket->request($uri, $headers, ['skip_body' => true]);
-        if ($this->socket->getStatusCode() != 101) {
+        $this->stream->request($uri, $headers, ['skip_body' => true]);
+        if ($this->stream->getStatusCode() != 101) {
             throw new ServerConnectionFailureException('unable to upgrade to WebSocket');
         }
 

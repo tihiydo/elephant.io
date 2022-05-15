@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -44,15 +45,14 @@ class EncoderTest extends TestCase
      */
     public function testLongPayload($maskKey, $expected)
     {
-        $payload = <<<'PAYLOAD'
+        $payload = <<<EOF
 This payload length is over 125 chars, hence the length part inside the payload
 should now be 16 bits in length. There are still a little bit less than that to
 satisfy the fact that we need more than 125 characters, but less than 65536. So
 this should do the trick...
-PAYLOAD
-;
+EOF;
 
-        $encoder = new Encoder($payload, Encoder::OPCODE_TEXT, null !== $maskKey);
+        $encoder = new Encoder($this->fixEol($payload), Encoder::OPCODE_TEXT, null !== $maskKey);
 
         if (null !== $maskKey) {
             $refl = new ReflectionProperty('ElephantIO\\AbstractPayload', 'maskKey');
@@ -90,5 +90,11 @@ PAYLOAD
         return [[null, $noMask],
                 ['?EV!', $withMask]];
     }
-}
 
+    private function fixEol($str, $from = "\r\n", $to = "\n") {
+        if (false !== strpos($str, $from)) {
+            $str = str_replace($from, $to, $str);
+        }
+        return $str;
+    }
+}

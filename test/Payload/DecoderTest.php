@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -34,12 +35,12 @@ class DecoderTest extends TestCase
     public function providerUnmaskedPayload()
     {
         $short = 'foo';
-        $long  = <<<'PAYLOAD'
+        $long  = <<<EOF
 This payload length is over 125 chars, hence the length part inside the payload
 should now be 16 bits in length. There are still a little bit less than that to
 satisfy the fact that we need more than 125 characters, but less than 65536. So
 this should do the trick...
-PAYLOAD;
+EOF;
 
         $shortMask = '8103666f6f';
         $longMask  = '817e010b54686973207061796c6f6164206c656e677468206973206f76'
@@ -54,7 +55,7 @@ PAYLOAD;
                    . '6520747269636b2e2e2e';
 
         return [[$shortMask, $short],
-                [$longMask, $long]];
+                [$longMask, $this->fixEol($long)]];
     }
 
     /**
@@ -79,12 +80,12 @@ PAYLOAD;
     {
 
         $short = 'foo';
-        $long  = <<<'PAYLOAD'
+        $long  = <<<EOF
 This payload length is over 125 chars, hence the length part inside the payload
 should now be 16 bits in length. There are still a little bit less than that to
 satisfy the fact that we need more than 125 characters, but less than 65536. So
 this should do the trick...
-PAYLOAD;
+EOF;
 
         $shortMask = '81833f455621592a39';
         $longMask  = '81fe010b3f4556216b2d3f521f353758532a37451f29334f58313e0156'
@@ -99,7 +100,7 @@ PAYLOAD;
                    . '2a7655572076554d2c354a116b78';
 
         return [[$shortMask, $short], // data encoded with < 125 characters
-                [$longMask, $long]];  // data encoded with > 125 characters but < 65536 characters
+                [$longMask, $this->fixEol($long)]];  // data encoded with > 125 characters but < 65536 characters
     }
 
     private function assertPropSame($expected, $object, $property)
@@ -109,5 +110,11 @@ PAYLOAD;
 
         $this->assertSame($expected, $refl->getValue($object));
     }
-}
 
+    private function fixEol($str, $from = "\r\n", $to = "\n") {
+        if (false !== strpos($str, $from)) {
+            $str = str_replace($from, $to, $str);
+        }
+        return $str;
+    }
+}

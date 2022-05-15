@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -14,10 +15,7 @@ namespace ElephantIO\Engine\SocketIO;
 /**
  * Implements the dialog with Socket.IO version 3.x
  *
- * Based on the work of Mathieu Lallemand (@lalmat)
- *
- * @author Baptiste Clavié <baptiste@wisembly.com>
- * @link https://tools.ietf.org/html/rfc6455#section-5.2 Websocket's RFC
+ * @author Toha <tohenk@yahoo.com>
  */
 class Version3X extends Version1X
 {

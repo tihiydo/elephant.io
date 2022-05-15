@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -9,7 +10,7 @@
  * @license   http://www.opensource.org/licenses/MIT-License MIT License
  */
 
-namespace ElephantIO\Engine;
+namespace ElephantIO;
 
 /**
  * Port of Yeast.

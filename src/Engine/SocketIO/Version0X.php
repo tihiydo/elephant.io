@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Elephant.io package
  *
@@ -13,13 +14,13 @@ namespace ElephantIO\Engine\SocketIO;
 
 use InvalidArgumentException;
 
-use ElephantIO\Payload\Encoder;
 use ElephantIO\Engine\AbstractSocketIO;
-use ElephantIO\Engine\Socket;
-
+use ElephantIO\Engine\Session;
 use ElephantIO\Exception\SocketException;
 use ElephantIO\Exception\UnsupportedTransportException;
 use ElephantIO\Exception\ServerConnectionFailureException;
+use ElephantIO\Payload\Encoder;
+use ElephantIO\Stream\AbstractStream;
 
 /**
  * Implements the dialog with Socket.IO version 0.x
@@ -64,8 +65,8 @@ class Version0X extends AbstractSocketIO
 
         $this->write(static::PROTO_CLOSE);
 
-        $this->socket->close();
-        $this->socket = null;
+        $this->stream->close();
+        $this->stream = null;
         $this->session = null;
         $this->cookies = [];
     }
@@ -89,7 +90,7 @@ class Version0X extends AbstractSocketIO
         }
 
         $payload = $this->getPayload($code, $message);
-        $bytes = $this->socket->send((string) $payload);
+        $bytes = $this->stream->write((string) $payload);
 
         // wait a little bit of time after this message was sent
         \usleep($this->options['wait']);
@@ -127,13 +128,13 @@ class Version0X extends AbstractSocketIO
      */
     protected function createSocket()
     {
-        if ($this->socket) {
+        if ($this->stream) {
             $this->logger->debug('Closing socket connection');
-            $this->socket->close();
-            $this->socket = null;
+            $this->stream->close();
+            $this->stream = null;
         }
-        $this->socket = new Socket($this->url, $this->context, array_merge($this->options, ['logger' => $this->logger]));
-        if ($errors = $this->socket->getErrors()) {
+        $this->stream = AbstractStream::create($this->url, $this->context, array_merge($this->options, ['logger' => $this->logger]));
+        if ($errors = $this->stream->getErrors()) {
             throw new SocketException($errors[0], $errors[1]);
         }
     }
@@ -169,19 +170,19 @@ class Version0X extends AbstractSocketIO
 
         $this->createSocket();
 
-        $url = $this->socket->getParsedUrl();
+        $url = $this->stream->getUrl()->getParsed();
         $uri = sprintf('/%s/%d/%s', trim($url['path'], '/'), $this->options['version'],
             $this->options['transport']);
         if (isset($url['query'])) {
             $uri .= '/?' . http_build_query($url['query']);
         }
 
-        $this->socket->request($uri, ['Connection: close']);
-        if ($this->socket->getStatusCode() != 200) {
+        $this->stream->request($uri, ['Connection: close']);
+        if ($this->stream->getStatusCode() != 200) {
             throw new ServerConnectionFailureException('unable to perform handshake');
         }
 
-        $sess = explode(':', $this->socket->getBody());
+        $sess = explode(':', $this->stream->getBody());
         $handshake = [
             'sid' => $sess[0],
             'pingInterval' => $sess[1],
@@ -194,7 +195,7 @@ class Version0X extends AbstractSocketIO
         }
 
         $cookies = [];
-        foreach ($this->socket->getHeaders() as $header) {
+        foreach ($this->stream->getHeaders() as $header) {
             $matches = null;
             if (preg_match('/^Set-Cookie:\s*([^;]*)/i', $header, $matches)) {
                 $cookies[] = $matches[1];
@@ -216,8 +217,7 @@ class Version0X extends AbstractSocketIO
 
         $this->createSocket();
 
-        $url = $this->socket->getParsedUrl();
-
+        $url = $this->stream->getUrl()->getParsed();
         $uri = sprintf('/%s/%d/%s/%s', trim($url['path'], '/'), $this->options['protocol'], $this->options['transport'], $this->session->id);
         if (isset($url['query'])) {
             $uri .= '/?' . http_build_query($url['query']);
@@ -247,8 +247,8 @@ class Version0X extends AbstractSocketIO
         if (!empty($this->cookies)) {
             $headers[] = sprintf('Cookie: %s', implode('; ', $this->cookies));
         }
-        $this->socket->request($uri, $headers, ['skip_body' => true]);
-        if ($this->socket->getStatusCode() != 101) {
+        $this->stream->request($uri, $headers, ['skip_body' => true]);
+        if ($this->stream->getStatusCode() != 101) {
             throw new ServerConnectionFailureException('unable to upgrade to WebSocket');
         }
 

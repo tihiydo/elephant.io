@@ -9,7 +9,7 @@
  * @license   http://www.opensource.org/licenses/MIT-License MIT License
  */
 
-namespace ElephantIO\Engine;
+namespace ElephantIO\Stream;
 
 class SequentialStream
 {
