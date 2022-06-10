@@ -43,11 +43,16 @@ $data = ['username' => 'my-user'];
 $client->emit('get-user-info', $data);
 
 // wait an event to arrive
+// beware when waiting for response from server, the script may be killed if
+// PHP max_execution_time is reached
 if ($packet = $client->wait('user-info')) {
     // an event has been received, the result will be a stdClass
-    $result = $packet->data;
-    // access stdClass property
-    $email = $result->email;
+    // data property contains the first argument
+    // args property contains array of arguments, [$data, ...]
+    $data = $packet->data;
+    $args = $packet->args;
+    // access data
+    $email = $data['email'];
 }
 ```
 

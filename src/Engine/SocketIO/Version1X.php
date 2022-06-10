@@ -278,10 +278,9 @@ class Version1X extends AbstractSocketIO
                     if (null !== ($data = json_decode($seq->getData(), true))) {
                         switch ($packet->type) {
                             case static::PACKET_EVENT:
-                                if (2 === count($data)) {
-                                    $packet->event = $data[0];
-                                    $packet->data = $data[1];
-                                }
+                                $packet->event = array_shift($data);
+                                $packet->args = $data;
+                                $packet->data = count($data) ? $data[0] : null;
                                 break;
                             default:
                                 $packet->data = $data;
