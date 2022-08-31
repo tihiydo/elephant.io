@@ -46,7 +46,7 @@ class Decoder extends AbstractPayload implements Countable
 
         // if ($payload !== null) and ($payload packet error)?
         // invalid websocket packet data or not (text, binary opCode)
-        if (3 > $length) {
+        if (!$length) {
             return;
         }
 
