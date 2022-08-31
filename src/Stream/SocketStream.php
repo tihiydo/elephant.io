@@ -53,12 +53,35 @@ class SocketStream extends AbstractStream
     }
 
     /**
+     * Get connection timeout (in second).
+     *
+     * @return int
+     */
+    protected function getTimeout()
+    {
+        return isset($this->options['timeout']) ? $this->options['timeout'] : 5;
+    }
+
+    /**
+     * Read metadata from socket.
+     *
+     * @return array
+     */
+    protected function readMetadata()
+    {
+        if (is_resource($this->handle)) {
+            $this->metadata = stream_get_meta_data($this->handle);
+            return $this->metadata;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function connect()
     {
         $errors = [null, null];
-        $timeout = isset($this->options['timeout']) ? $this->options['timeout'] : 5; // seconds
+        $timeout = $this->getTimeout();
         $address = $this->url->getAddress();
 
         $this->logger->debug(sprintf('Socket connect %s', $address));
@@ -67,6 +90,7 @@ class SocketStream extends AbstractStream
 
         if (is_resource($this->handle)) {
             stream_set_timeout($this->handle, $timeout);
+            stream_set_blocking($this->handle, false);
         } else {
             $this->errors = $errors;
         }
@@ -77,9 +101,8 @@ class SocketStream extends AbstractStream
      */
     public function connected()
     {
-        if (is_resource($this->handle)) {
-            $this->metadata = stream_get_meta_data($this->handle);
-            return $this->metadata['eof'] ? false : true;
+        if ($metadata = $this->readMetadata()) {
+            return $metadata['eof'] ? false : true;
         }
     }
 
@@ -151,20 +174,21 @@ class SocketStream extends AbstractStream
         $this->logger->debug('Waiting for response!!!');
         while (true) {
             if (!$this->connected()) break;
-            if (false === ($content = $header ? fgets($this->handle) : fread($this->handle, $len))) break;
-            $this->logger->debug(sprintf('Receive: %s', trim($content)));
-            if ($content === static::EOL && $header) {
-                if ($skip_body) break;
-                $header = false;
-            } else {
-                if ($header) {
-                    $this->result['headers'][] = trim($content);
-                    if (null === $len && 0 === stripos($content, 'Content-Length:')) {
-                        $len = (int) trim(substr($content, 16));
-                    }
+            if ($content = $header ? fgets($this->handle) : fread($this->handle, $len)) {
+                $this->logger->debug(sprintf('Receive: %s', trim($content)));
+                if ($content === static::EOL && $header) {
+                    if ($skip_body) break;
+                    $header = false;
                 } else {
-                    $this->result['body'] .= $content;
-                    if ($len === strlen($this->result['body'])) break;
+                    if ($header) {
+                        $this->result['headers'][] = trim($content);
+                        if (null === $len && 0 === stripos($content, 'Content-Length:')) {
+                            $len = (int) trim(substr($content, 16));
+                        }
+                    } else {
+                        $this->result['body'] .= $content;
+                        if ($len === strlen($this->result['body'])) break;
+                    }
                 }
             }
             usleep($this->options['wait']);
