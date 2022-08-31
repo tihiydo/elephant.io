@@ -40,10 +40,11 @@ class Session
     {
         $this->id        = $id;
         $this->upgrades  = $upgrades;
-        $this->heartbeat = $this->getTime();
         $this->timeouts  = ['timeout'  => (float)$timeout,
                             'interval' => (float)$interval];
         $this->maxPayload = $maxPayload;
+
+        $this->resetHeartbeat();
     }
 
     /**
@@ -96,12 +97,24 @@ class Session
     public function needsHeartbeat()
     {
         if (0 < $this->timeouts['interval'] && $this->getTime() > ($this->timeouts['interval'] + $this->heartbeat - 5)) {
-            $this->heartbeat = $this->getTime();
+            $this->resetHeartbeat();
 
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Reset heart beat.
+     *
+     * @return \ElephantIO\Engine\Session
+     */
+    public function resetHeartbeat()
+    {
+        $this->heartbeat = $this->getTime();
+
+        return $this;
     }
 
     public function __toString()
