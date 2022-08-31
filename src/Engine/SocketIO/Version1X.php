@@ -207,7 +207,7 @@ class Version1X extends AbstractSocketIO
             throw new \InvalidArgumentException('Wrong message type when trying to write on the socket');
         }
         $encoder = new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
-        $encoder->setMaxPayload($this->options['max_payload']);
+        $encoder->setMaxPayload($this->session->maxPayload ? $this->session->maxPayload : $this->options['max_payload']);
 
         return $encoder;
     }
@@ -425,7 +425,8 @@ class Version1X extends AbstractSocketIO
             $handshake['sid'],
             $handshake['pingInterval'] / 1000,
             $handshake['pingTimeout'] / 1000,
-            $handshake['upgrades']
+            $handshake['upgrades'],
+            isset($handshake['maxPayload']) ? $handshake['maxPayload'] : null
         );
 
         $this->logger->debug(sprintf('Handshake finished with %s', (string) $this->session));

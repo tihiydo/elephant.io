@@ -33,14 +33,17 @@ class Session
     /** @var string[] supported upgrades */
     private $upgrades;
 
-    public function __construct($id, $interval, $timeout, array $upgrades)
+    /** @var integer maximum payload length */
+    private $maxPayload;
+
+    public function __construct($id, $interval, $timeout, array $upgrades, $maxPayload = null)
     {
         $this->id        = $id;
         $this->upgrades  = $upgrades;
         $this->heartbeat = $this->getTime();
-
         $this->timeouts  = ['timeout'  => (float)$timeout,
                             'interval' => (float)$interval];
+        $this->maxPayload = $maxPayload;
     }
 
     /**
@@ -51,7 +54,7 @@ class Session
      */
     public function __get($prop)
     {
-        static $list = ['id', 'upgrades'];
+        static $list = ['id', 'upgrades', 'maxPayload'];
 
         if (!\in_array($prop, $list)) {
             throw new InvalidArgumentException(\sprintf('Unknown property "%s" for the Session object. Only the following are availables : ["%s"]', $prop, \implode('", "', $list)));
@@ -108,6 +111,7 @@ class Session
             'heartbeat' => $this->heartbeat,
             'timeouts' => $this->timeouts,
             'upgrades' => $this->upgrades,
+            'maxPayload' => $this->maxPayload,
         ]);
     }
 }
