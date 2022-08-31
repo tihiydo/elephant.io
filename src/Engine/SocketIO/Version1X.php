@@ -92,7 +92,7 @@ class Version1X extends AbstractSocketIO
         $this->keepAlive();
         $namespace = $this->namespace;
 
-        if ('' !== $namespace) {
+        if (!in_array($namespace, ['', '/'])) {
             $namespace .= ',';
         }
 
@@ -116,15 +116,18 @@ class Version1X extends AbstractSocketIO
     /** {@inheritDoc} */
     public function of($namespace)
     {
-        $this->keepAlive();
-        parent::of($namespace);
+        $oldns = $this->namespace ? $this->namespace : '/';
+        if ($oldns != $namespace) {
+            $this->keepAlive();
+            parent::of($namespace);
 
-        $this->write(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
+            $this->write(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
 
-        if ($data = $this->read()) {
-            $packet = $this->decodePacket($data);
+            if ($data = $this->read()) {
+                $packet = $this->decodePacket($data);
 
-            return $packet;
+                return $packet;
+            }
         }
     }
 
