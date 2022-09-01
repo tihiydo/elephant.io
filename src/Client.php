@@ -123,6 +123,16 @@ class Client
     }
 
     /**
+     * Drain socket.
+     *
+     * @return mixed
+     */
+    public function drain()
+    {
+        return $this->engine->drain();
+    }
+
+    /**
      * Sets the namespace for the next messages
      *
      * @param string namespace the name of the namespace

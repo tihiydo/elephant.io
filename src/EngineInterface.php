@@ -58,6 +58,13 @@ interface EngineInterface extends LoggerAwareInterface
     public function wait($event);
 
     /**
+     * Drain data from socket.
+     *
+     * @return mixed
+     */
+    public function drain();
+
+    /**
      * Keeps alive the connection
      */
     public function keepAlive();

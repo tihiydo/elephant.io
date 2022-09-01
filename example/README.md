@@ -5,7 +5,7 @@
 Ensure Nodejs already installed on your system, then issue:
 
 ```
-$ cd server
+$ cd some-example/server
 $ npm install
 $ npm start
 ```
@@ -15,7 +15,7 @@ $ npm start
 On another terminal, issue:
 
 ```
-$ cd client
+$ cd some-example/client
 $ php client.php
 ```
 

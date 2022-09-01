@@ -89,7 +89,6 @@ class Version1X extends AbstractSocketIO
     /** {@inheritDoc} */
     public function emit($event, array $args)
     {
-        $this->keepAlive();
         $namespace = $this->namespace;
 
         if (!in_array($namespace, ['', '/'])) {
@@ -103,8 +102,7 @@ class Version1X extends AbstractSocketIO
     public function wait($event)
     {
         while (true) {
-            if ($data = $this->read()) {
-                $packet = $this->decodePacket($data);
+            if ($packet = $this->drain()) {
                 if ($packet->proto === static::PROTO_MESSAGE && $packet->type === static::PACKET_EVENT &&
                     $this->matchNamespace($packet->nsp) && $packet->event === $event) {
                     return $packet;
@@ -114,20 +112,38 @@ class Version1X extends AbstractSocketIO
     }
 
     /** {@inheritDoc} */
+    public function drain()
+    {
+        if ($data = $this->read()) {
+            $this->logger->debug('Got data', ['data' => $data]);
+            $packet = $this->decodePacket($data);
+            switch ($packet->proto) {
+                case static::PROTO_PING:
+                    $this->logger->debug('Sending PONG');
+                    $this->write(static::PROTO_PONG);
+                    break;
+                case static::PROTO_PONG:
+                    $this->logger->debug('Got PONG');
+                    break;
+                case static::PROTO_NOOP:
+                    break;
+                default:
+                    return $packet;
+            }
+        }
+        $this->keepAlive();
+    }
+
+    /** {@inheritDoc} */
     public function of($namespace)
     {
         $oldns = $this->namespace ? $this->namespace : '/';
         if ($oldns != $namespace) {
-            $this->keepAlive();
             parent::of($namespace);
 
             $this->write(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
 
-            if ($data = $this->read()) {
-                $packet = $this->decodePacket($data);
-
-                return $packet;
-            }
+            return $this->drain();
         }
     }
 
@@ -144,6 +160,7 @@ class Version1X extends AbstractSocketIO
                 $this->options['max_payload']));
         }
         $bytes = $this->stream->write($fragments[0]);
+        $this->session->resetHeartbeat();
 
         // wait a little bit of time after this message was sent
         \usleep((int) $this->options['wait']);
@@ -274,7 +291,7 @@ class Version1X extends AbstractSocketIO
             $packet = new \stdClass();
             $packet->proto = $proto;
             $packet->type = (int) $seq->read();
-            $packet->nsp = $seq->readUntil(',[', ['[']);
+            $packet->nsp = $seq->readUntil(',[{', ['[', '{']);
 
             switch ($packet->proto) {
                 case static::PROTO_MESSAGE:
@@ -532,7 +549,7 @@ class Version1X extends AbstractSocketIO
      */
     public function keepAlive()
     {
-        if ($this->session->needsHeartbeat()) {
+        if ($this->options['version'] <= 3 && $this->session->needsHeartbeat()) {
             $this->logger->debug('Sending PING');
             $this->write(static::PROTO_PING);
         }

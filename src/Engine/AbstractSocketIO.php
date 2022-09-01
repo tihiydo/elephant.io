@@ -138,6 +138,12 @@ abstract class AbstractSocketIO implements EngineInterface
         throw new UnsupportedActionException($this, 'wait');
     }
 
+    /** {@inheritDoc} */
+    public function drain()
+    {
+        throw new UnsupportedActionException($this, 'drain');
+    }
+
     /**
      * Network safe \fread wrapper
      *
@@ -262,5 +268,10 @@ abstract class AbstractSocketIO implements EngineInterface
     protected function getDefaultOptions()
     {
         return [];
+    }
+
+    public function getStream()
+    {
+        return $this->stream;
     }
 }
