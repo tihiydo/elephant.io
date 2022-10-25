@@ -121,9 +121,28 @@ class SocketStream extends AbstractStream
      */
     public function write($data)
     {
+        $bytes = null;
         if (is_resource($this->handle)) {
-            return fwrite($this->handle, (string) $data);
+            $data = (string) $data;
+            $len = strlen($data);
+            while (true) {
+                if (false === ($written = fwrite($this->handle, $data))) {
+                    throw new \RuntimeException(sprintf('Unable to write %d data to stream!', strlen($data)));
+                }
+                if (null === $bytes) {
+                    $bytes = $written;
+                } else {
+                    $bytes += $written;
+                }
+                // all data has been written
+                if ($len === $bytes) {
+                    break;
+                }
+                // this is the remaining data
+                $data = substr($data, $written);
+            }
         }
+        return $bytes;
     }
 
     /**
