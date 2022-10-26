@@ -26,8 +26,10 @@ use ElephantIO\AbstractPayload;
 class Encoder extends AbstractPayload
 {
     private $data;
+
     /** @var string */
     private $payload;
+
     /** @var string[] */
     private $fragments = [];
 

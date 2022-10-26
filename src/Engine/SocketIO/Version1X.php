@@ -13,7 +13,10 @@
 namespace ElephantIO\Engine\SocketIO;
 
 use InvalidArgumentException;
+use RuntimeException;
+use stdClass;
 
+use ElephantIO\SequenceReader;
 use ElephantIO\Yeast;
 use ElephantIO\Engine\AbstractSocketIO;
 use ElephantIO\Engine\Session;
@@ -22,7 +25,6 @@ use ElephantIO\Exception\UnsupportedTransportException;
 use ElephantIO\Exception\ServerConnectionFailureException;
 use ElephantIO\Payload\Encoder;
 use ElephantIO\Stream\AbstractStream;
-use ElephantIO\Stream\SequentialStream;
 
 /**
  * Implements the dialog with Socket.IO version 1.x
@@ -156,7 +158,7 @@ class Version1X extends AbstractSocketIO
 
         $payload = $this->getPayload($code, $message);
         if (count($fragments = $payload->encode()->getFragments()) > 1) {
-            throw new \RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
+            throw new RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
                 $this->options['max_payload']));
         }
         $bytes = $this->stream->write($fragments[0]);
@@ -188,7 +190,7 @@ class Version1X extends AbstractSocketIO
     /**
      * Create socket.
      *
-     * @throws SocketException
+     * @throws \ElephantIO\Exception\SocketException
      */
     protected function createSocket()
     {
@@ -221,7 +223,7 @@ class Version1X extends AbstractSocketIO
     protected function getPayload($code, $message)
     {
         if (!is_int($code) || static::PROTO_OPEN > $code || static::PROTO_NOOP < $code) {
-            throw new \InvalidArgumentException('Wrong message type when trying to write on the socket');
+            throw new InvalidArgumentException('Wrong message type when trying to write on the socket');
         }
         $encoder = new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
         $encoder->setMaxPayload($this->session->maxPayload ? $this->session->maxPayload : $this->options['max_payload']);
@@ -238,13 +240,13 @@ class Version1X extends AbstractSocketIO
     protected function decodeData($data)
     {
         $result = [];
-        $seq = new SequentialStream($data);
+        $seq = new SequenceReader($data);
         while (!$seq->isEof()) {
             if (null === ($len = $this->options['version'] >= 4 ? strlen($seq->getData()) : $seq->readUntil(':'))) {
-                throw new \RuntimeException('Data delimiter not found!');
+                throw new RuntimeException('Data delimiter not found!');
             }
 
-            $dseq = new SequentialStream($seq->read((int) $len));
+            $dseq = new SequenceReader($seq->read((int) $len));
             $type = (int) $dseq->read();
             $packet = $dseq->getData();
             switch ($type) {
@@ -252,7 +254,7 @@ class Version1X extends AbstractSocketIO
                   $packet = json_decode($packet, true);
                   break;
             }
-            $item = new \stdClass();
+            $item = new stdClass();
             $item->type = $type;
             $item->data = $packet;
             $result[] = $item;
@@ -285,10 +287,10 @@ class Version1X extends AbstractSocketIO
      */
     protected function decodePacket($data)
     {
-        $seq = new SequentialStream($data);
+        $seq = new SequenceReader($data);
         $proto = (int) $seq->read();
         if ($proto >= static::PROTO_OPEN && $proto <= static::PROTO_NOOP) {
-            $packet = new \stdClass();
+            $packet = new stdClass();
             $packet->proto = $proto;
             $packet->type = (int) $seq->read();
             $packet->nsp = $seq->readUntil(',[{', ['[', '{']);

@@ -31,7 +31,9 @@ interface EngineInterface extends LoggerAwareInterface
      */
     public function connect();
 
-    /** Closes the connection to the websocket */
+    /**
+     * Closes the connection to the websocket
+     */
     public function close();
 
     /**

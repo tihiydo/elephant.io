@@ -60,7 +60,7 @@ interface StreamInterface
     /**
      * Get url.
      *
-     * @return SocketUrl
+     * @return \ElephantIO\SocketUrl
      */
     public function getUrl();
 

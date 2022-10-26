@@ -12,8 +12,9 @@
 
 namespace ElephantIO\Stream;
 
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+
+use InvalidArgumentException;
 
 use ElephantIO\SocketUrl;
 use ElephantIO\StreamInterface;
@@ -26,7 +27,7 @@ use ElephantIO\StreamInterface;
 abstract class AbstractStream implements StreamInterface
 {
     /**
-     * @var SocketUrl
+     * @var \ElephantIO\SocketUrl
      */
     protected $url = null;
 
@@ -41,7 +42,7 @@ abstract class AbstractStream implements StreamInterface
     protected $options = null;
 
     /**
-     * @var LoggerInterface
+     * @var \Psr\Log\LoggerInterface
      */
     protected $logger = null;
 
@@ -79,7 +80,7 @@ abstract class AbstractStream implements StreamInterface
     /**
      * Create socket stream.
      *
-     * @return StreamInterface
+     * @return \ElephantIO\StreamInterface
      */
     public static function create($url, $context = [], $options = [])
     {
@@ -89,11 +90,11 @@ abstract class AbstractStream implements StreamInterface
             unset($options['stream_factory']);
         }
         if (!class_exists($class)) {
-            throw new \InvalidArgumentException(sprintf('Socket stream class %s not found!', $class));
+            throw new InvalidArgumentException(sprintf('Socket stream class %s not found!', $class));
         }
         $clazz = new $class($url, $context, $options);
         if (!$clazz instanceof StreamInterface) {
-            throw new \InvalidArgumentException(sprintf('Class %s must implmenet StreamInterface!', $class));
+            throw new InvalidArgumentException(sprintf('Class %s must implmenet StreamInterface!', $class));
         }
         return $clazz;
     }

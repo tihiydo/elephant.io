@@ -124,7 +124,7 @@ class Version0X extends AbstractSocketIO
     /**
      * Create socket.
      *
-     * @throws SocketException
+     * @throws \ElephantIO\Exception\SocketException
      */
     protected function createSocket()
     {
@@ -150,7 +150,7 @@ class Version0X extends AbstractSocketIO
     protected function getPayload($code, $message)
     {
         if (!is_int($code) || 0 > $code || 6 < $code) {
-            throw new \InvalidArgumentException('Wrong message type when trying to write on the socket');
+            throw new InvalidArgumentException('Wrong message type when trying to write on the socket');
         }
 
         return new Encoder($code . '::' . $this->namespace . ':' . $message, Encoder::OPCODE_TEXT, true);

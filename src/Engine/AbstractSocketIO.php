@@ -40,7 +40,7 @@ abstract class AbstractSocketIO implements EngineInterface
     /** @var array cookies received during handshake */
     protected $cookies = [];
 
-    /** @var Session Session information */
+    /** @var \ElephantIO\Engine\Session Session information */
     protected $session;
 
     /** @var mixed[] Array of default options for the engine */
@@ -49,7 +49,7 @@ abstract class AbstractSocketIO implements EngineInterface
     /** @var mixed[] Array of options for the engine */
     protected $options;
 
-    /** @var StreamInterface Resource to the connected stream */
+    /** @var \ElephantIO\StreamInterface Resource to the connected stream */
     protected $stream;
 
     /** @var string the namespace of the next message */
@@ -156,7 +156,7 @@ abstract class AbstractSocketIO implements EngineInterface
         $chunk = null;
         while ($bytes > 0) {
             if (!$this->stream->connected()) {
-                throw new \RuntimeException('Stream disconnected');
+                throw new RuntimeException('Stream disconnected');
             }
             $this->keepAlive();
             if (false === ($chunk = $this->stream->read($bytes))) {
@@ -166,7 +166,7 @@ abstract class AbstractSocketIO implements EngineInterface
             $data .= $chunk;
         }
         if (false === $chunk) {
-            throw new \RuntimeException('Could not read from stream');
+            throw new RuntimeException('Could not read from stream');
         }
         return $data;
     }

@@ -13,7 +13,6 @@
 namespace ElephantIO;
 
 use ReflectionMethod;
-
 use ReflectionProperty;
 
 use PHPUnit\Framework\TestCase;
@@ -36,4 +35,6 @@ class AbstractPayloadTest extends TestCase
 }
 
 /** Fixtures for these tests */
-class Payload extends AbstractPayload { }
+class Payload extends AbstractPayload
+{
+}

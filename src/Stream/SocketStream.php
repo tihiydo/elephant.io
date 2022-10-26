@@ -12,6 +12,8 @@
 
 namespace ElephantIO\Stream;
 
+use RuntimeException;
+
 /**
  * Basic stream to connect to the socket server which behave as an HTTP client.
  *
@@ -127,19 +129,21 @@ class SocketStream extends AbstractStream
             $len = strlen($data);
             while (true) {
                 if (false === ($written = fwrite($this->handle, $data))) {
-                    throw new \RuntimeException(sprintf('Unable to write %d data to stream!', strlen($data)));
+                    throw new RuntimeException(sprintf('Unable to write %d data to stream!', strlen($data)));
                 }
-                if (null === $bytes) {
-                    $bytes = $written;
-                } else {
-                    $bytes += $written;
+                if ($written > 0) {
+                    if (null === $bytes) {
+                        $bytes = $written;
+                    } else {
+                        $bytes += $written;
+                    }
+                    // all data has been written
+                    if ($len === $bytes) {
+                        break;
+                    }
+                    // this is the remaining data
+                    $data = substr($data, $written);
                 }
-                // all data has been written
-                if ($len === $bytes) {
-                    break;
-                }
-                // this is the remaining data
-                $data = substr($data, $written);
             }
         }
         return $bytes;
@@ -193,7 +197,7 @@ class SocketStream extends AbstractStream
         $this->logger->debug('Waiting for response!!!');
         while (true) {
             if (!$this->connected()) break;
-            if ($content = $header ? fgets($this->handle) : fread($this->handle, $len)) {
+            if ($content = $header ? fgets($this->handle) : fread($this->handle, (int) $len)) {
                 $this->logger->debug(sprintf('Receive: %s', trim($content)));
                 if ($content === static::EOL && $header) {
                     if ($skip_body) break;

@@ -15,6 +15,8 @@ namespace ElephantIO;
 use Psr\Log\NullLogger;
 use Psr\Log\LoggerInterface;
 
+use InvalidArgumentException;
+
 use ElephantIO\Engine\SocketIO\Version0X;
 use ElephantIO\Engine\SocketIO\Version1X;
 use ElephantIO\Engine\SocketIO\Version2X;
@@ -36,10 +38,10 @@ class Client
     const CLIENT_3X = 3;
     const CLIENT_4X = 4;
 
-    /** @var EngineInterface */
+    /** @var \ElephantIO\EngineInterface */
     private $engine;
 
-    /** @var LoggerInterface */
+    /** @var \Psr\Log\LoggerInterface */
     private $logger;
 
     private $isConnected = false;
@@ -63,7 +65,7 @@ class Client
     /**
      * Connects to the websocket
      *
-     * @return $this
+     * @return \ElephantIO\Client
      */
     public function initialize()
     {
@@ -98,8 +100,7 @@ class Client
      *
      * @param string $event
      * @param array  $args
-     *
-     * @return $this
+     * @return \ElephantIO\Client
      */
     public function emit($event, array $args)
     {
@@ -113,7 +114,6 @@ class Client
      * Wait an event arrived from the engine
      *
      * @param string $event
-     *
      * @return \stdClass
      */
     public function wait($event)
@@ -136,7 +136,7 @@ class Client
      * Sets the namespace for the next messages
      *
      * @param string namespace the name of the namespace
-     * @return $this
+     * @return \ElephantIO\Client
      */
     public function of($namespace)
     {
@@ -149,7 +149,7 @@ class Client
     /**
      * Closes the connection
      *
-     * @return $this
+     * @return \ElephantIO\Client
      */
     public function close()
     {
@@ -164,7 +164,7 @@ class Client
     /**
      * Gets the engine used, for more advanced functions
      *
-     * @return EngineInterface
+     * @return \ElephantIO\EngineInterface
      */
     public function getEngine()
     {
@@ -194,7 +194,7 @@ class Client
             case static::CLIENT_4X:
                 return new Version4X($url, $options);
             default:
-                throw new \InvalidArgumentException(sprintf('Unknown engine version %d!', $version));
+                throw new InvalidArgumentException(sprintf('Unknown engine version %d!', $version));
         }
     }
 }
