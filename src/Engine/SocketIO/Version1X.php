@@ -117,7 +117,7 @@ class Version1X extends AbstractSocketIO
     public function drain()
     {
         if ($data = $this->read()) {
-            $this->logger->debug('Got data', ['data' => $data]);
+            $this->logger->debug(sprintf('Got data: %s', (string) $data));
             $packet = $this->decodePacket($data);
             switch ($packet->proto) {
                 case static::PROTO_PING:
