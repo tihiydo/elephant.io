@@ -87,7 +87,11 @@ class SocketStream extends AbstractStream
         $address = $this->url->getAddress();
 
         $this->logger->debug(sprintf('Socket connect %s', $address));
-        $this->handle = @stream_socket_client($address, $errors[0], $errors[1], $timeout, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT,
+        $flags = STREAM_CLIENT_CONNECT;
+        if (!isset($this->options['persistent']) || $this->options['persistent']) {
+            $flags |= STREAM_CLIENT_PERSISTENT;
+        }
+        $this->handle = @stream_socket_client($address, $errors[0], $errors[1], $timeout, $flags,
             stream_context_create($this->context));
 
         if (is_resource($this->handle)) {

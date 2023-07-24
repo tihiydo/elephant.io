@@ -11,7 +11,7 @@
      /      ./_    Y    "-. \    communications between your PHP Application and
     Y       :~     !         Y   a real-time server.
     lq p    |     /         .|
- _   \. .-, l    /          |j   Requires PHP 5.4 and openssl, licensed under
+ _   \. .-, l    /          |j   Requires PHP 7.2 and openssl, licensed under
 ()\___) |/   \_/";          !    the MIT License.
  \._____.-~\  .  ~\.      ./
             Y_ Y_. "vr"~  T      Built-in Engines:
@@ -26,7 +26,7 @@ We are suggesting you to use composer, with the following: `php composer.phar re
 
 ## Usage
 
-To use Elephant.io to communicate with socket server described as follow.
+To use Elephant.io to communicate with socket server is described as follows.
 
 ```php
 <?php
@@ -54,6 +54,15 @@ if ($packet = $client->wait('user-info')) {
     // access data
     $email = $data['email'];
 }
+```
+
+The socket connection by default will be using a persistent connection. If you prefer for some
+reasons to disable it, just pass `['persistent' => false]` options when creating the client.
+
+```php
+<?php
+
+$client = new Client(Client::engine(Client::CLIENT_4X, $url, ['persistent' => false]));
 ```
 
 ## Documentation
