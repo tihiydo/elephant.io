@@ -288,7 +288,7 @@ class SocketStream extends AbstractStream
      */
     public function getStatusCode()
     {
-        if ($status = $this->getStatus()) {
+        if (($status = $this->getStatus()) && preg_match('#^HTTP\/\d+\.\d+#', $status)) {
             list(, $code, ) = explode(' ', $status, 3);
             return $code;
         }
