@@ -1,5 +1,5 @@
 {
-    "name": "elephant-io_example_keep_alive",
+    "name": "elephant-io_example_keep-alive",
     "version": "1.0.0",
     "main": "server.js",
     "scripts": {

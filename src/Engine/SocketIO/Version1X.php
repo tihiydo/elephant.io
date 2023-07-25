@@ -103,34 +103,63 @@ class Version1X extends AbstractSocketIO
     /** {@inheritDoc} */
     public function wait($event)
     {
+        $binary = null;
+        $idx = 0;
         while (true) {
-            if ($packet = $this->drain()) {
-                if ($packet->proto === static::PROTO_MESSAGE && $packet->type === static::PACKET_EVENT &&
-                    $this->matchNamespace($packet->nsp) && $packet->event === $event) {
-                    return $packet;
+            if ($packet = $this->drain($binary ? true : false)) {
+                if ($binary) {
+                    foreach (array_keys($binary->data) as $key) {
+                        if (is_array($binary->data[$key]) && isset($binary->data[$key]['_placeholder']) && $binary->data[$key]['_placeholder']) {
+                            if ($binary->data[$key]['num'] === $idx) {
+                                $binary->data[$key] = (string) $packet;
+                                $this->logger->debug(sprintf('Replacing binary value for %s', $key));
+                                break;
+                            }
+                        }
+                    }
+                    $idx++;
+                    $binary->binCount--;
+                    if ($binary->binCount) {
+                        continue;
+                    }
+                    $packet = $binary;
+                    $packet->type = static::PACKET_EVENT;
+                    $binary = null;
+                }
+                if ($packet->proto === static::PROTO_MESSAGE) {
+                    if ($packet->type === static::PACKET_BINARY_EVENT) {
+                        $binary = $packet;
+                    }
+                    if ($packet->type === static::PACKET_EVENT && $this->matchNamespace($packet->nsp) && $packet->event === $event) {
+                        return $packet;
+                    }
                 }
             }
         }
     }
 
     /** {@inheritDoc} */
-    public function drain()
+    public function drain($raw = false)
     {
         if ($data = $this->read()) {
             $this->logger->debug(sprintf('Got data: %s', (string) $data));
-            $packet = $this->decodePacket($data);
-            switch ($packet->proto) {
-                case static::PROTO_PING:
-                    $this->logger->debug('Sending PONG');
-                    $this->write(static::PROTO_PONG);
-                    break;
-                case static::PROTO_PONG:
-                    $this->logger->debug('Got PONG');
-                    break;
-                case static::PROTO_NOOP:
-                    break;
-                default:
-                    return $packet;
+            if (!$raw) {
+                $packet = $this->decodePacket($data);
+                switch ($packet->proto) {
+                    case static::PROTO_PING:
+                        $this->logger->debug('Sending PONG');
+                        $this->write(static::PROTO_PONG);
+                        break;
+                    case static::PROTO_PONG:
+                        $this->logger->debug('Got PONG');
+                        break;
+                    case static::PROTO_NOOP:
+                        break;
+                    default:
+                        return $packet;
+                }
+            } else {
+                return $data;
             }
         }
         $this->keepAlive();
@@ -293,6 +322,10 @@ class Version1X extends AbstractSocketIO
             $packet = new stdClass();
             $packet->proto = $proto;
             $packet->type = (int) $seq->read();
+            if ($packet->type === static::PACKET_BINARY_EVENT) {
+                $packet->binCount = (int) $seq->readUntil('-');
+                $seq->read();
+            }
             $packet->nsp = $seq->readUntil(',[{', ['[', '{']);
 
             switch ($packet->proto) {
@@ -300,6 +333,7 @@ class Version1X extends AbstractSocketIO
                     if (null !== ($data = json_decode($seq->getData(), true))) {
                         switch ($packet->type) {
                             case static::PACKET_EVENT:
+                            case static::PACKET_BINARY_EVENT:
                                 $packet->event = array_shift($data);
                                 $packet->args = $data;
                                 $packet->data = count($data) ? $data[0] : null;
