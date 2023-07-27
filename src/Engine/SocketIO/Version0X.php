@@ -63,7 +63,7 @@ class Version0X extends AbstractSocketIO
             return;
         }
 
-        $this->write(static::PROTO_CLOSE);
+        $this->send(static::PROTO_CLOSE);
 
         $this->stream->close();
         $this->stream = null;
@@ -74,7 +74,7 @@ class Version0X extends AbstractSocketIO
     /** {@inheritDoc} */
     public function emit($event, array $args)
     {
-        $this->write(static::PACKET_EVENT, json_encode(['name' => $event, 'args' => $args]));
+        $this->send(static::PACKET_EVENT, json_encode(['name' => $event, 'args' => $args]));
     }
 
     /** {@inheritDoc} */
@@ -83,7 +83,7 @@ class Version0X extends AbstractSocketIO
     }
 
     /** {@inheritDoc} */
-    public function write($code, $message = null)
+    public function send($code, $message = null)
     {
         if (!$this->isConnected()) {
             return;
@@ -103,7 +103,7 @@ class Version0X extends AbstractSocketIO
     {
         parent::of($namespace);
 
-        $this->write(static::PROTO_OPEN);
+        $this->send(static::PROTO_OPEN);
     }
 
     /** {@inheritDoc} */

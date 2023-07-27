@@ -80,7 +80,7 @@ class Version1X extends AbstractSocketIO
             return;
         }
 
-        $this->write(static::PROTO_CLOSE);
+        $this->send(static::PROTO_CLOSE);
 
         $this->stream->close();
         $this->stream = null;
@@ -97,7 +97,7 @@ class Version1X extends AbstractSocketIO
             $namespace .= ',';
         }
 
-        return $this->write(static::PROTO_MESSAGE, static::PACKET_EVENT . $namespace . json_encode([$event, $args]));
+        return $this->send(static::PROTO_MESSAGE, static::PACKET_EVENT . $namespace . json_encode([$event, $args]));
     }
 
     /** {@inheritDoc} */
@@ -148,7 +148,7 @@ class Version1X extends AbstractSocketIO
                 switch ($packet->proto) {
                     case static::PROTO_PING:
                         $this->logger->debug('Sending PONG');
-                        $this->write(static::PROTO_PONG);
+                        $this->send(static::PROTO_PONG);
                         break;
                     case static::PROTO_PONG:
                         $this->logger->debug('Got PONG');
@@ -172,14 +172,14 @@ class Version1X extends AbstractSocketIO
         if ($oldns != $namespace) {
             parent::of($namespace);
 
-            $this->write(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
+            $this->send(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
 
             return $this->drain();
         }
     }
 
     /** {@inheritDoc} */
-    public function write($code, $message = null)
+    public function send($code, $message = null)
     {
         if (!$this->isConnected()) {
             return;
@@ -570,7 +570,7 @@ class Version1X extends AbstractSocketIO
             throw new ServerConnectionFailureException('unable to upgrade to WebSocket');
         }
 
-        $this->write(static::PROTO_UPGRADE);
+        $this->send(static::PROTO_UPGRADE);
 
         //remove message '40' from buffer, emmiting by socket.io after receiving static::PROTO_UPGRADE
         if ($this->options['version'] === 2) {
@@ -587,7 +587,7 @@ class Version1X extends AbstractSocketIO
     {
         if ($this->options['version'] <= 3 && $this->session->needsHeartbeat()) {
             $this->logger->debug('Sending PING');
-            $this->write(static::PROTO_PING);
+            $this->send(static::PROTO_PING);
         }
     }
 }

@@ -18,7 +18,6 @@ use DomainException;
 use RuntimeException;
 
 use ElephantIO\EngineInterface;
-use ElephantIO\StreamInterface;
 use ElephantIO\Exception\UnsupportedActionException;
 use ElephantIO\Payload\Decoder;
 
@@ -119,12 +118,12 @@ abstract class AbstractSocketIO implements EngineInterface
     }
 
     /**
-     * Write the message to the socket
+     * Send message to the socket.
      *
      * @param integer $code    type of message (one of EngineInterface constants)
      * @param string  $message Message to send, correctly formatted
      */
-    abstract public function write($code, $message = null);
+    abstract public function send($code, $message = null);
 
     /** {@inheritDoc} */
     public function emit($event, array $args)
@@ -145,7 +144,7 @@ abstract class AbstractSocketIO implements EngineInterface
     }
 
     /**
-     * Network safe \fread wrapper
+     * Network safe fread wrapper.
      *
      * @param integer $bytes
      * @return bool|string
