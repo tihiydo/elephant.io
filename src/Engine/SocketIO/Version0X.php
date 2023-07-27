@@ -93,10 +93,22 @@ class Version0X extends AbstractSocketIO
         }
 
         $payload = $this->getPayload($code . '::' . $this->namespace . ':' . $message);
-        $bytes = $this->stream->write((string) $payload);
+
+        return $this->write((string) $payload);
+    }
+
+    /**
+     * Write to the stream.
+     *
+     * @param string $data
+     * @return int
+     */
+    protected function write($data)
+    {
+        $bytes = $this->stream->write($data);
 
         // wait a little bit of time after this message was sent
-        \usleep($this->options['wait']);
+        \usleep((int) $this->options['wait']);
 
         return $bytes;
     }

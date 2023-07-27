@@ -92,12 +92,25 @@ class Version1X extends AbstractSocketIO
     public function emit($event, array $args)
     {
         $namespace = $this->namespace;
-
         if (!in_array($namespace, ['', '/'])) {
             $namespace .= ',';
         }
 
-        return $this->send(static::PROTO_MESSAGE, static::PACKET_EVENT . $namespace . json_encode([$event, $args]));
+        $attachments = [];
+        $this->getAttachments($args, $attachments);
+        $type = count($attachments) ? static::PACKET_BINARY_EVENT : static::PACKET_EVENT;
+        $data = $namespace . json_encode([$event, $args]);
+        if ($type === static::PACKET_BINARY_EVENT) {
+            $data = sprintf('%d-%s', count($attachments), $data);
+            $this->logger->debug(sprintf('Binary event arguments %s', json_encode($args)));
+        }
+
+        $count = $this->send(static::PROTO_MESSAGE, $type . $data);
+        foreach ($attachments as $attachment) {
+            $count += $this->write($this->getPayload($attachment, Encoder::OPCODE_BINARY));
+        }
+
+        return $count;
     }
 
     /** {@inheritDoc} */
@@ -193,7 +206,19 @@ class Version1X extends AbstractSocketIO
             throw new RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
                 $this->options['max_payload']));
         }
-        $bytes = $this->stream->write($fragments[0]);
+
+        return $this->write($fragments[0]);
+    }
+
+    /**
+     * Write to the stream.
+     *
+     * @param string $data
+     * @return int
+     */
+    protected function write($data)
+    {
+        $bytes = $this->stream->write($data);
         $this->session->resetHeartbeat();
 
         // wait a little bit of time after this message was sent
@@ -347,6 +372,34 @@ class Version1X extends AbstractSocketIO
             }
 
             return $packet;
+        }
+    }
+
+    /**
+     * Get attachment from packet data. A packet data considered as attachment
+     * if it's a resource and it has content.
+     *
+     * @param array $array
+     * @param array $result
+     */
+    protected function getAttachments(&$array, &$result)
+    {
+        if (is_array($array)) {
+            foreach ($array as &$value) {
+                if (is_resource($value)) {
+                    fseek($value, 0);
+                    if ($content = stream_get_contents($value)) {
+                        $idx = count($result);
+                        $result[] = $content;
+                        $value = ['_placeholder' => true, 'num' => $idx];
+                    } else {
+                        $value = null;
+                    }
+                }
+                if (is_array($value)) {
+                    $this->getAttachments($value, $result);
+                }
+            }
         }
     }
 

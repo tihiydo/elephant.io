@@ -36,14 +36,13 @@ $client = new Client(Client::engine($version, $url), $logger);
 $client->initialize();
 $client->of('/binary-event');
 
-// create bulk payload of 10MB data
-$payload100k = file_get_contents(__DIR__ . '/../../../test/Payload/data/payload-100k.txt');
-$payload = '';
-for ($i = 0; $i < 9; $i++) {
-    $payload .= $payload100k;
-}
+// create binary payload
+$payload100k = __DIR__ . '/../../../test/Payload/data/payload-100k.txt';
+$payload = fopen($payload100k, 'rb');
+$bindata = fopen('php://memory', 'w+');
+fwrite($bindata, '1234567890');
 
-$client->emit($event, ['payload' => $payload]);
+$client->emit($event, ['data1' => ['test' => $payload], 'data2' => $bindata]);
 if ($retval = $client->wait($event)) {
     echo sprintf("Got a reply: %s\n", json_encode($retval->data));
 }
