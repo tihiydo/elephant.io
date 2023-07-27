@@ -22,7 +22,20 @@ io.of('/binary-event')
             })
             .on('test-binary', data => {
                 console.log('Client send data: %s', data);
-                socket.emit('test-binary', {success: true, bin1: Buffer.from(new Date().toString()), bin2: Buffer.from('1234567890')});
+                const payload = [];
+                const f = function(p) {
+                    if (typeof p === 'object') {
+                        Object.keys(p).forEach(k => {
+                            if (p[k] instanceof Buffer) {
+                                payload.push(p[k]);
+                            } else if (typeof p[k] === 'object' && p[k].constructor.name === 'Object') {
+                                f(p[k]);
+                            }
+                        });
+                    }
+                }
+                f(data);
+                socket.emit('test-binary', {success: true, time: Buffer.from(new Date().toString()), payload: payload});
             });
     });
 

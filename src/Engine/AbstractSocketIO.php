@@ -247,10 +247,19 @@ abstract class AbstractSocketIO implements EngineInterface
         }
 
         $data .= $this->readBytes($length);
-        $this->logger->debug(sprintf('Receiving data: %s', $data));
+        $this->logger->debug(sprintf('Receiving data: %s', $this->truncate($data)));
 
         // decode the payload
         return new Decoder($data);
+    }
+
+    protected function truncate($message, $maxLen = 200)
+    {
+        if ($message && strlen($message) > $maxLen) {
+            $message = sprintf('%s... %d more', substr($message, 0, $maxLen), strlen($message) - $maxLen);
+        }
+
+        return $message;
     }
 
     /** {@inheritDoc} */

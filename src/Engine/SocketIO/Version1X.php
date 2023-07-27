@@ -121,16 +121,7 @@ class Version1X extends AbstractSocketIO
         while (true) {
             if ($packet = $this->drain($binary ? true : false)) {
                 if ($binary) {
-                    foreach (array_keys($binary->data) as $key) {
-                        if (is_array($binary->data[$key]) && isset($binary->data[$key]['_placeholder']) && $binary->data[$key]['_placeholder']) {
-                            if ($binary->data[$key]['num'] === $idx) {
-                                $binary->data[$key] = (string) $packet;
-                                $this->logger->debug(sprintf('Replacing binary value for %s', $key));
-                                break;
-                            }
-                        }
-                    }
-                    $idx++;
+                    $this->replaceAttachment($binary->data, $idx++, (string) $packet);
                     $binary->binCount--;
                     if ($binary->binCount) {
                         continue;
@@ -155,7 +146,7 @@ class Version1X extends AbstractSocketIO
     public function drain($raw = false)
     {
         if ($data = $this->read()) {
-            $this->logger->debug(sprintf('Got data: %s', (string) $data));
+            $this->logger->debug(sprintf('Got data: %s', $this->truncate((string) $data)));
             if (!$raw) {
                 $packet = $this->decodePacket($data);
                 switch ($packet->proto) {
@@ -398,6 +389,29 @@ class Version1X extends AbstractSocketIO
                 }
                 if (is_array($value)) {
                     $this->getAttachments($value, $result);
+                }
+            }
+        }
+    }
+
+    /**
+     * Replace binary attachment.
+     *
+     * @param array $array
+     * @param int $index
+     * @param string $data
+     */
+    protected function replaceAttachment(&$array, $index, $data)
+    {
+        if (is_array($array)) {
+            foreach ($array as $key => &$value) {
+                if (is_array($value)) {
+                    if (isset($value['_placeholder']) && $value['_placeholder'] && $value['num'] === $index) {
+                        $value = $data;
+                        $this->logger->debug(sprintf('Replacing binary attachment for %d (%s)', $index, $key));
+                    } else {
+                        $this->replaceAttachment($value, $index, $data);
+                    }
                 }
             }
         }
