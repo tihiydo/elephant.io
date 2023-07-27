@@ -184,8 +184,11 @@ class Version1X extends AbstractSocketIO
         if (!$this->isConnected()) {
             return;
         }
+        if (!is_int($code) || static::PROTO_OPEN > $code || static::PROTO_NOOP < $code) {
+            throw new InvalidArgumentException('Wrong message type to sent to socket');
+        }
 
-        $payload = $this->getPayload($code, $message);
+        $payload = $this->getPayload($code . $message);
         if (count($fragments = $payload->encode()->getFragments()) > 1) {
             throw new RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
                 $this->options['max_payload']));
@@ -244,17 +247,14 @@ class Version1X extends AbstractSocketIO
     /**
      * Create payload.
      *
-     * @param int $code
-     * @param string $message
+     * @param string $data
+     * @param int $encoding
      * @throws \InvalidArgumentException
      * @return \ElephantIO\Payload\Encoder
      */
-    protected function getPayload($code, $message)
+    protected function getPayload($data, $encoding = Encoder::OPCODE_TEXT)
     {
-        if (!is_int($code) || static::PROTO_OPEN > $code || static::PROTO_NOOP < $code) {
-            throw new InvalidArgumentException('Wrong message type when trying to write on the socket');
-        }
-        $encoder = new Encoder($code . $message, Encoder::OPCODE_TEXT, true);
+        $encoder = new Encoder($data, $encoding, true);
         $encoder->setMaxPayload($this->session->maxPayload ? $this->session->maxPayload : $this->options['max_payload']);
 
         return $encoder;

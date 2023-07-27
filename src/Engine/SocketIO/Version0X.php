@@ -88,8 +88,11 @@ class Version0X extends AbstractSocketIO
         if (!$this->isConnected()) {
             return;
         }
+        if (!is_int($code) || 0 > $code || 6 < $code) {
+            throw new InvalidArgumentException('Wrong message type to sent to socket');
+        }
 
-        $payload = $this->getPayload($code, $message);
+        $payload = $this->getPayload($code . '::' . $this->namespace . ':' . $message);
         $bytes = $this->stream->write((string) $payload);
 
         // wait a little bit of time after this message was sent
@@ -142,18 +145,14 @@ class Version0X extends AbstractSocketIO
     /**
      * Create payload.
      *
-     * @param int $code
-     * @param string $message
+     * @param string $data
+     * @param int $encoding
      * @throws \InvalidArgumentException
      * @return \ElephantIO\Payload\Encoder
      */
-    protected function getPayload($code, $message)
+    protected function getPayload($data, $encoding = Encoder::OPCODE_TEXT)
     {
-        if (!is_int($code) || 0 > $code || 6 < $code) {
-            throw new InvalidArgumentException('Wrong message type when trying to write on the socket');
-        }
-
-        return new Encoder($code . '::' . $this->namespace . ':' . $message, Encoder::OPCODE_TEXT, true);
+        return new Encoder($data, $encoding, true);
     }
 
     /** Does the handshake with the Socket.io server and populates the `session` value object */
