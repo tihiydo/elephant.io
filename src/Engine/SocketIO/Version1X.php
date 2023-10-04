@@ -176,7 +176,7 @@ class Version1X extends AbstractSocketIO
         if ($oldns != $namespace) {
             parent::of($namespace);
 
-            $this->send(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace);
+            $this->send(static::PROTO_MESSAGE, static::PACKET_CONNECT . $namespace . $this->getAuthPayload($namespace));
 
             return $this->drain();
         }
@@ -454,7 +454,7 @@ class Version1X extends AbstractSocketIO
             't'         => Yeast::yeast(),
             'sid'       => $this->session->id,
         ]);
-        $payload = static::PROTO_MESSAGE . static::PACKET_CONNECT;
+        $payload = static::PROTO_MESSAGE . static::PACKET_CONNECT . $this->getAuthPayload();
 
         $this->stream->request($uri, ['Connection: close'], ['method' => 'POST', 'payload' => $payload]);
         if ($this->stream->getStatusCode() != 200) {
@@ -462,6 +462,24 @@ class Version1X extends AbstractSocketIO
         }
 
         $this->logger->debug('Requesting namespace completed');
+    }
+
+    protected function getAuthPayload($namespace = '/')
+    {
+        if (!$this->options['auth'] || $this->options['version'] < 4) {
+            return '';
+        }
+
+        $encodedAuthPayload = json_encode($this->options['auth']);
+        if ($encodedAuthPayload === false) {
+            throw new Exception('Can\'t parse auth option to JSON: ' . json_last_error_msg());
+        }
+
+        $preString = '';
+        if ($namespace && $namespace !== '' && $namespace !== '/') {
+            $preString = ',';
+        }
+        return $preString . $encodedAuthPayload;
     }
 
     /**
