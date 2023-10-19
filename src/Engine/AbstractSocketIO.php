@@ -13,10 +13,8 @@
 namespace ElephantIO\Engine;
 
 use Psr\Log\LoggerAwareTrait;
-
 use DomainException;
 use RuntimeException;
-
 use ElephantIO\EngineInterface;
 use ElephantIO\Exception\UnsupportedActionException;
 use ElephantIO\Payload\Decoder;
@@ -25,13 +23,13 @@ abstract class AbstractSocketIO implements EngineInterface
 {
     use LoggerAwareTrait;
 
-    const PACKET_CONNECT      = 0;
-    const PACKET_DISCONNECT   = 1;
-    const PACKET_EVENT        = 2;
-    const PACKET_ACK          = 3;
-    const PACKET_ERROR        = 4;
-    const PACKET_BINARY_EVENT = 5;
-    const PACKET_BINARY_ACK   = 6;
+    public const PACKET_CONNECT = 0;
+    public const PACKET_DISCONNECT = 1;
+    public const PACKET_EVENT = 2;
+    public const PACKET_ACK = 3;
+    public const PACKET_ERROR = 4;
+    public const PACKET_BINARY_EVENT = 5;
+    public const PACKET_BINARY_ACK = 6;
 
     /** @var string[] Parse url result */
     protected $url;
@@ -75,9 +73,9 @@ abstract class AbstractSocketIO implements EngineInterface
         }
 
         $this->defaults = array_merge([
-            'debug'     => false,
-            'wait'      => 50, // 50 ms
-            'timeout'   => \ini_get('default_socket_timeout')
+            'debug' => false,
+            'wait' => 50, // 50 ms
+            'timeout' => \ini_get('default_socket_timeout')
         ], $this->getDefaultOptions());
         $this->options = \array_replace($this->defaults, $options);
     }
@@ -89,7 +87,7 @@ abstract class AbstractSocketIO implements EngineInterface
      */
     public function getOptions()
     {
-      return $this->options;
+        return $this->options;
     }
 
     /**
@@ -175,6 +173,7 @@ abstract class AbstractSocketIO implements EngineInterface
         if (false === $chunk) {
             throw new RuntimeException('Could not read from stream');
         }
+
         return $data;
     }
 
@@ -218,8 +217,7 @@ abstract class AbstractSocketIO implements EngineInterface
          */
         switch ($length) {
             case 0x7D: // 125
-            break;
-
+                break;
             case 0x7E: // 126
                 $data .= $bytes = $this->readBytes(2);
                 $bytes = \unpack('n', $bytes);
@@ -229,8 +227,7 @@ abstract class AbstractSocketIO implements EngineInterface
                 }
 
                 $length = $bytes[1];
-            break;
-
+                break;
             case 0x7F: // 127
                 // are (at least) 64 bits not supported by the architecture ?
                 if (8 > PHP_INT_SIZE) {
@@ -246,7 +243,7 @@ abstract class AbstractSocketIO implements EngineInterface
                 $data .= $bytes = $this->readBytes(8);
                 list($left, $right) = \array_values(\unpack('N2', $bytes));
                 $length = $left << 32 | $right;
-            break;
+                break;
         }
 
         // incorporate the mask key if the mask bit is 1

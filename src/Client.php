@@ -14,9 +14,7 @@ namespace ElephantIO;
 
 use Psr\Log\NullLogger;
 use Psr\Log\LoggerInterface;
-
 use InvalidArgumentException;
-
 use ElephantIO\Engine\SocketIO\Version0X;
 use ElephantIO\Engine\SocketIO\Version1X;
 use ElephantIO\Engine\SocketIO\Version2X;
@@ -32,11 +30,11 @@ use ElephantIO\Exception\SocketException;
  */
 class Client
 {
-    const CLIENT_0X = 0;
-    const CLIENT_1X = 1;
-    const CLIENT_2X = 2;
-    const CLIENT_3X = 3;
-    const CLIENT_4X = 4;
+    public const CLIENT_0X = 0;
+    public const CLIENT_1X = 1;
+    public const CLIENT_2X = 2;
+    public const CLIENT_3X = 3;
+    public const CLIENT_4X = 4;
 
     /** @var \ElephantIO\EngineInterface */
     private $engine;
@@ -49,7 +47,7 @@ class Client
     public function __construct(EngineInterface $engine, LoggerInterface $logger = null)
     {
         $this->engine = $engine;
-        $this->logger = $logger ?: new NullLogger;
+        $this->logger = $logger ?: new NullLogger();
         $this->engine->setLogger($this->logger);
     }
 
@@ -92,6 +90,7 @@ class Client
     public function read()
     {
         $this->logger->debug('Reading a new message from the socket');
+
         return $this->engine->read();
     }
 
@@ -119,6 +118,7 @@ class Client
     public function wait($event)
     {
         $this->logger->debug('Waiting for event', ['event' => $event]);
+
         return $this->engine->wait($event);
     }
 

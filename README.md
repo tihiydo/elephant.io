@@ -56,13 +56,40 @@ if ($packet = $client->wait('user-info')) {
 }
 ```
 
+One can pass the options to the engine such as passing headers, providing additional
+authentication token, or [stream context](https://www.php.net/manual/en/function.stream-context-create.php).
+
+```php
+<?php
+
+// additional headers
+$client = new Client(Client::engine(Client::CLIENT_4X, $url, [
+    'headers' => ['Authorization' => 'Bearer MYTOKEN']
+]));
+
+// authentication
+$client = new Client(Client::engine(Client::CLIENT_4X, $url, [
+    'auth' => [
+        'user' => 'user@example.com',
+        'token' => 'my-secret-token',
+    ]
+]));
+
+// stream context
+$client = new Client(Client::engine(Client::CLIENT_4X, $url, [
+    'context' => ['http' => [], 'ssl' => []]
+]));
+```
+
 The socket connection by default will be using a persistent connection. If you prefer for some
 reasons to disable it, just pass `['persistent' => false]` options when creating the client.
 
 ```php
 <?php
 
-$client = new Client(Client::engine(Client::CLIENT_4X, $url, ['persistent' => false]));
+$client = new Client(Client::engine(Client::CLIENT_4X, $url, [
+    'persistent' => false
+]));
 ```
 
 ## Documentation

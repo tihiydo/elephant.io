@@ -38,10 +38,10 @@ class Session
 
     public function __construct($id, $interval, $timeout, array $upgrades, $maxPayload = null)
     {
-        $this->id        = $id;
-        $this->upgrades  = $upgrades;
-        $this->timeouts  = ['timeout'  => (float)$timeout,
-                            'interval' => (float)$interval];
+        $this->id = $id;
+        $this->upgrades = $upgrades;
+        $this->timeouts = ['timeout' => (float)$timeout,
+            'interval' => (float)$interval];
         $this->maxPayload = $maxPayload;
 
         $this->resetHeartbeat();

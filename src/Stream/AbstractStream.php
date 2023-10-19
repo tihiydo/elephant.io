@@ -13,9 +13,7 @@
 namespace ElephantIO\Stream;
 
 use Psr\Log\NullLogger;
-
 use InvalidArgumentException;
-
 use ElephantIO\SocketUrl;
 use ElephantIO\StreamInterface;
 
@@ -96,6 +94,7 @@ abstract class AbstractStream implements StreamInterface
         if (!$clazz instanceof StreamInterface) {
             throw new InvalidArgumentException(sprintf('Class %s must implmenet StreamInterface!', $class));
         }
+
         return $clazz;
     }
 }

@@ -42,14 +42,14 @@ interface StreamInterface
      */
     public function write($data);
 
-     /**
-     * Perform HTTP request.
-     *
-     * @param string $uri
-     * @param array $headers
-     * @param array $options
-     * @return bool
-     */
+    /**
+    * Perform HTTP request.
+    *
+    * @param string $uri
+    * @param array $headers
+    * @param array $options
+    * @return bool
+    */
     public function request($uri, $headers = [], $options = []);
 
     /**

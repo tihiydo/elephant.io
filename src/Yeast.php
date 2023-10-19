@@ -74,6 +74,7 @@ class Yeast
             $num = floor($num / $this->length);
             $encoded = substr($this->alphabet, $index, 1) . $encoded;
         } while ($num > 0);
+
         return $encoded;
     }
 
@@ -89,6 +90,7 @@ class Yeast
         for ($i = 0; $i < strlen($str); $i++) {
             $decoded = $decoded * $this->length + $this->map[substr($str, $i, 1)];
         }
+
         return $decoded;
     }
 
@@ -106,8 +108,10 @@ class Yeast
         if ($this->prev !== $generated) {
             $this->seed = 0;
             $this->prev = $generated;
+
             return $generated;
         }
+
         return $generated . '.' . $this->encode($this->seed++);
     }
 
@@ -120,6 +124,7 @@ class Yeast
         if (null === self::$instance) {
             self::$instance = new self();
         }
+
         return self::$instance->generate();
     }
 }

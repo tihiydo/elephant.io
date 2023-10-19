@@ -21,7 +21,7 @@ use RuntimeException;
  */
 class SocketStream extends AbstractStream
 {
-    const EOL = "\r\n";
+    public const EOL = "\r\n";
 
     /**
      * @var resource
@@ -73,6 +73,7 @@ class SocketStream extends AbstractStream
     {
         if (is_resource($this->handle)) {
             $this->metadata = stream_get_meta_data($this->handle);
+
             return $this->metadata;
         }
     }
@@ -97,12 +98,19 @@ class SocketStream extends AbstractStream
             ['headers' => array_map(
                 function($key, $value) { return "$key: $value"; },
                 array_keys($this->context['headers']),
-                $this->context['headers'])
+                $this->context['headers']
+            )
             ]
         );
 
-        $this->handle = @stream_socket_client($address, $errors[0], $errors[1], $timeout, $flags,
-            stream_context_create($context));
+        $this->handle = @stream_socket_client(
+            $address,
+            $errors[0],
+            $errors[1],
+            $timeout,
+            $flags,
+            stream_context_create($context)
+        );
 
         if (is_resource($this->handle)) {
             stream_set_timeout($this->handle, $timeout);
@@ -160,6 +168,7 @@ class SocketStream extends AbstractStream
                 }
             }
         }
+
         return $bytes;
     }
 
@@ -172,9 +181,9 @@ class SocketStream extends AbstractStream
             return;
         }
 
-        $method     = isset($options['method']) ? $options['method'] : 'GET';
-        $skip_body  = isset($options['skip_body']) ? $options['skip_body'] : false;
-        $payload    = isset($options['payload']) ? $options['payload'] : null;
+        $method = isset($options['method']) ? $options['method'] : 'GET';
+        $skip_body = isset($options['skip_body']) ? $options['skip_body'] : false;
+        $payload = isset($options['payload']) ? $options['payload'] : null;
 
         if ($payload) {
             $contentType = $headers['Content-type'] ?? null;
@@ -187,7 +196,7 @@ class SocketStream extends AbstractStream
         }
 
         $headers['Host'] = $this->url->getHost();
-        if(isset($this->options['headers'])){
+        if(isset($this->options['headers'])) {
             $headers = array_merge($headers, $this->options['headers']);
         }
         $request = array_merge([
@@ -205,11 +214,15 @@ class SocketStream extends AbstractStream
         $len = null;
         $this->logger->debug('Waiting for response!!!');
         while (true) {
-            if (!$this->connected()) break;
+            if (!$this->connected()) {
+                break;
+            }
             if ($content = $header ? fgets($this->handle) : fread($this->handle, (int) $len)) {
                 $this->logger->debug(sprintf('Receive: %s', trim($content)));
                 if ($content === static::EOL && $header) {
-                    if ($skip_body) break;
+                    if ($skip_body) {
+                        break;
+                    }
                     $header = false;
                 } else {
                     if ($header) {
@@ -219,7 +232,9 @@ class SocketStream extends AbstractStream
                         }
                     } else {
                         $this->result['body'] .= $content;
-                        if ($len === strlen($this->result['body'])) break;
+                        if ($len === strlen($this->result['body'])) {
+                            break;
+                        }
                     }
                 }
             }
@@ -299,6 +314,7 @@ class SocketStream extends AbstractStream
     {
         if (($status = $this->getStatus()) && preg_match('#^HTTP\/\d+\.\d+#', $status)) {
             list(, $code, ) = explode(' ', $status, 3);
+
             return $code;
         }
     }

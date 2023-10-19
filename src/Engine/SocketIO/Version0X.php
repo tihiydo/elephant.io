@@ -13,7 +13,6 @@
 namespace ElephantIO\Engine\SocketIO;
 
 use InvalidArgumentException;
-
 use ElephantIO\Engine\AbstractSocketIO;
 use ElephantIO\Engine\Session;
 use ElephantIO\Exception\SocketException;
@@ -32,18 +31,18 @@ use ElephantIO\Stream\AbstractStream;
  */
 class Version0X extends AbstractSocketIO
 {
-    const PROTO_CLOSE         = 0;
-    const PROTO_OPEN          = 1;
-    const PROTO_HEARTBEAT     = 2;
-    const PROTO_MESSAGE       = 3;
-    const PROTO_JOIN_MESSAGE  = 4;
-    const PROTO_EVENT         = 5;
-    const PROTO_ACK           = 6;
-    const PROTO_ERROR         = 7;
-    const PROTO_NOOP          = 8;
+    public const PROTO_CLOSE = 0;
+    public const PROTO_OPEN = 1;
+    public const PROTO_HEARTBEAT = 2;
+    public const PROTO_MESSAGE = 3;
+    public const PROTO_JOIN_MESSAGE = 4;
+    public const PROTO_EVENT = 5;
+    public const PROTO_ACK = 6;
+    public const PROTO_ERROR = 7;
+    public const PROTO_NOOP = 8;
 
-    const TRANSPORT_POLLING   = 'xhr-polling';
-    const TRANSPORT_WEBSOCKET = 'websocket';
+    public const TRANSPORT_POLLING = 'xhr-polling';
+    public const TRANSPORT_WEBSOCKET = 'websocket';
 
     /** {@inheritDoc} */
     public function connect()
@@ -182,8 +181,12 @@ class Version0X extends AbstractSocketIO
         $this->createSocket();
 
         $url = $this->stream->getUrl()->getParsed();
-        $uri = sprintf('/%s/%d/%s', trim($url['path'], '/'), $this->options['version'],
-            $this->options['transport']);
+        $uri = sprintf(
+            '/%s/%d/%s',
+            trim($url['path'], '/'),
+            $this->options['version'],
+            $this->options['transport']
+        );
         if (isset($url['query'])) {
             $uri .= '/?' . http_build_query($url['query']);
         }

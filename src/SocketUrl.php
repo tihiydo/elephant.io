@@ -52,8 +52,8 @@ class SocketUrl
 
         $result = array_replace([
             'scheme' => 'http',
-            'host'   => 'localhost',
-            'query'  => []
+            'host' => 'localhost',
+            'query' => []
         ], $parsed);
         if (!isset($result['port'])) {
             $result['port'] = 'https' === $result['scheme'] ? 443 : 80;

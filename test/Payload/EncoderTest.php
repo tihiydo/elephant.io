@@ -13,7 +13,6 @@
 namespace ElephantIO\Payload;
 
 use ReflectionProperty;
-
 use PHPUnit\Framework\TestCase;
 
 class EncoderTest extends TestCase
@@ -35,7 +34,7 @@ class EncoderTest extends TestCase
     public function providerShortPayload()
     {
         return [[null, '8103666f6f'],
-                ['?EV!', '81833f455621592a39']];
+            ['?EV!', '81833f455621592a39']];
     }
 
     /**
@@ -65,7 +64,7 @@ EOF;
 
     public function providerLongPayload()
     {
-        $noMask   = '817e010b54686973207061796c6f6164206c656e677468206973206f76'
+        $noMask = '817e010b54686973207061796c6f6164206c656e677468206973206f76'
                   . '6572203132352063686172732c2068656e636520746865206c656e6774'
                   . '68207061727420696e7369646520746865207061796c6f61640a73686f'
                   . '756c64206e6f77206265203136206269747320696e206c656e6774682e'
@@ -88,13 +87,15 @@ EOF;
                   . '2a7655572076554d2c354a116b78';
 
         return [[null, $noMask],
-                ['?EV!', $withMask]];
+            ['?EV!', $withMask]];
     }
 
-    private function fixEol($str, $from = "\r\n", $to = "\n") {
+    private function fixEol($str, $from = "\r\n", $to = "\n")
+    {
         if (false !== strpos($str, $from)) {
             $str = str_replace($from, $to, $str);
         }
+
         return $str;
     }
 }

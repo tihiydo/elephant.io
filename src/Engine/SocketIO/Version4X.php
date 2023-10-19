@@ -19,7 +19,6 @@ namespace ElephantIO\Engine\SocketIO;
  */
 class Version4X extends Version1X
 {
-
     /** {@inheritDoc} */
     public function getName()
     {

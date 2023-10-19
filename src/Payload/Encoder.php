@@ -40,9 +40,9 @@ class Encoder extends AbstractPayload
      */
     public function __construct($data, $opCode, $mask)
     {
-        $this->data    = $data;
-        $this->opCode  = $opCode;
-        $this->mask    = (bool) $mask;
+        $this->data = $data;
+        $this->opCode = $opCode;
+        $this->mask = (bool) $mask;
 
         if (true === $this->mask) {
             $this->maskKey = \openssl_random_pseudo_bytes(4);
@@ -68,29 +68,29 @@ class Encoder extends AbstractPayload
      */
     protected function doEncode($data, $opCode)
     {
-        $pack   = '';
+        $pack = '';
         $length = \strlen($data);
 
         if (0xFFFF < $length) {
-            $pack   = \pack('NN', ($length >> 0b100000) & 0xFFFFFFFF, $length & 0xFFFFFFFF);
+            $pack = \pack('NN', ($length >> 0b100000) & 0xFFFFFFFF, $length & 0xFFFFFFFF);
             $length = 0x007F;
         } elseif (0x007D < $length) {
-            $pack   = \pack('n*', $length);
+            $pack = \pack('n*', $length);
             $length = 0x007E;
         }
 
         $payload = ($this->fin << 0b001) | $this->rsv[0];
-        $payload = ($payload   << 0b001) | $this->rsv[1];
-        $payload = ($payload   << 0b001) | $this->rsv[2];
-        $payload = ($payload   << 0b100) | $opCode;
-        $payload = ($payload   << 0b001) | $this->mask;
-        $payload = ($payload   << 0b111) | $length;
+        $payload = ($payload << 0b001) | $this->rsv[1];
+        $payload = ($payload << 0b001) | $this->rsv[2];
+        $payload = ($payload << 0b100) | $opCode;
+        $payload = ($payload << 0b001) | $this->mask;
+        $payload = ($payload << 0b111) | $length;
 
         $payload = \pack('n', $payload) . $pack;
 
         if (true === $this->mask) {
             $payload .= $this->maskKey;
-            $data     = $this->maskData($data);
+            $data = $this->maskData($data);
         }
 
         return $payload . $data;

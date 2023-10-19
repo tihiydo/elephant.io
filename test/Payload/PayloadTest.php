@@ -18,26 +18,26 @@ class PayloadTest extends TestCase
 {
     protected function encodeDecode($sz, $filename)
     {
-      $payload = file_get_contents($filename);
-      $encoder = new Encoder($payload, Decoder::OPCODE_TEXT, false);
-      $encoded = (string) $encoder;
-      $decoder = new Decoder($encoded);
-      $decoded = (string) $decoder;
-      $this->assertEquals($payload, $decoded, 'Properly encode and decode payload '.$sz.' content');
+        $payload = file_get_contents($filename);
+        $encoder = new Encoder($payload, Decoder::OPCODE_TEXT, false);
+        $encoded = (string) $encoder;
+        $decoder = new Decoder($encoded);
+        $decoded = (string) $decoder;
+        $this->assertEquals($payload, $decoded, 'Properly encode and decode payload '.$sz.' content');
     }
 
     public function testPayload7D()
     {
-      $this->encodeDecode('125-bytes', __DIR__.'/data/payload-7d.txt');
+        $this->encodeDecode('125-bytes', __DIR__.'/data/payload-7d.txt');
     }
 
     public function testPayloadFFFF()
     {
-      $this->encodeDecode('64-kilobytes', __DIR__.'/data/payload-ffff.txt');
+        $this->encodeDecode('64-kilobytes', __DIR__.'/data/payload-ffff.txt');
     }
 
     public function testPayloadAboveFFFF()
     {
-      $this->encodeDecode('100-kilobytes', __DIR__.'/data/payload-100k.txt');
+        $this->encodeDecode('100-kilobytes', __DIR__.'/data/payload-100k.txt');
     }
 }

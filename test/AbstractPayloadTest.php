@@ -14,14 +14,13 @@ namespace ElephantIO;
 
 use ReflectionMethod;
 use ReflectionProperty;
-
 use PHPUnit\Framework\TestCase;
 
 class AbstractPayloadTest extends TestCase
 {
     public function testMaskData()
     {
-        $payload = new Payload;
+        $payload = new Payload();
 
         $refl = new ReflectionProperty('ElephantIO\\Payload', 'maskKey');
         $refl->setAccessible(true);

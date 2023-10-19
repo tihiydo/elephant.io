@@ -15,7 +15,6 @@ namespace ElephantIO\Engine\SocketIO;
 use InvalidArgumentException;
 use RuntimeException;
 use stdClass;
-
 use ElephantIO\SequenceReader;
 use ElephantIO\Yeast;
 use ElephantIO\Engine\AbstractSocketIO;
@@ -36,16 +35,16 @@ use ElephantIO\Stream\AbstractStream;
  */
 class Version1X extends AbstractSocketIO
 {
-    const PROTO_OPEN    = 0;
-    const PROTO_CLOSE   = 1;
-    const PROTO_PING    = 2;
-    const PROTO_PONG    = 3;
-    const PROTO_MESSAGE = 4;
-    const PROTO_UPGRADE = 5;
-    const PROTO_NOOP    = 6;
+    public const PROTO_OPEN = 0;
+    public const PROTO_CLOSE = 1;
+    public const PROTO_PING = 2;
+    public const PROTO_PONG = 3;
+    public const PROTO_MESSAGE = 4;
+    public const PROTO_UPGRADE = 5;
+    public const PROTO_NOOP = 6;
 
-    const TRANSPORT_POLLING   = 'polling';
-    const TRANSPORT_WEBSOCKET = 'websocket';
+    public const TRANSPORT_POLLING = 'polling';
+    public const TRANSPORT_WEBSOCKET = 'websocket';
 
     /**
      * Last socket connect time.
@@ -194,8 +193,10 @@ class Version1X extends AbstractSocketIO
 
         $payload = $this->getPayload($code . $message);
         if (count($fragments = $payload->encode()->getFragments()) > 1) {
-            throw new RuntimeException(sprintf('Payload is exceed the maximum allowed length of %d!',
-                $this->options['max_payload']));
+            throw new RuntimeException(sprintf(
+                'Payload is exceed the maximum allowed length of %d!',
+                $this->options['max_payload']
+            ));
         }
 
         return $this->write($fragments[0]);
@@ -296,8 +297,8 @@ class Version1X extends AbstractSocketIO
             $packet = $dseq->getData();
             switch ($type) {
                 case static::PACKET_CONNECT:
-                  $packet = json_decode($packet, true);
-                  break;
+                    $packet = json_decode($packet, true);
+                    break;
             }
             $item = new stdClass();
             $item->type = $type;
@@ -436,6 +437,7 @@ class Version1X extends AbstractSocketIO
         if (isset($url['query']) && $url['query']) {
             $query = array_replace($query, $url['query']);
         }
+
         return sprintf('/%s/?%s', trim($url['path'], '/'), http_build_query($query));
     }
 
@@ -449,10 +451,10 @@ class Version1X extends AbstractSocketIO
         $this->createSocket();
 
         $uri = $this->getUri([
-            'EIO'       => $this->options['version'],
+            'EIO' => $this->options['version'],
             'transport' => $this->options['transport'],
-            't'         => Yeast::yeast(),
-            'sid'       => $this->session->id,
+            't' => Yeast::yeast(),
+            'sid' => $this->session->id,
         ]);
         $payload = static::PROTO_MESSAGE . static::PACKET_CONNECT . $this->getAuthPayload();
 
@@ -479,6 +481,7 @@ class Version1X extends AbstractSocketIO
         if ($namespace && $namespace !== '' && $namespace !== '/') {
             $preString = ',';
         }
+
         return $preString . $encodedAuthPayload;
     }
 
@@ -492,10 +495,10 @@ class Version1X extends AbstractSocketIO
         $this->createSocket();
 
         $uri = $this->getUri([
-            'EIO'       => $this->options['version'],
+            'EIO' => $this->options['version'],
             'transport' => $this->options['transport'],
-            't'         => Yeast::yeast(),
-            'sid'       => $this->session->id,
+            't' => Yeast::yeast(),
+            'sid' => $this->session->id,
         ]);
 
         $sid = null;
@@ -525,9 +528,9 @@ class Version1X extends AbstractSocketIO
         $this->createSocket();
 
         $query = [
-            'EIO'       => $this->options['version'],
+            'EIO' => $this->options['version'],
             'transport' => $this->options['transport'],
-            't'         => Yeast::yeast(),
+            't' => Yeast::yeast(),
         ];
         if ($this->options['use_b64']) {
             $query['b64'] = 1;
@@ -608,10 +611,10 @@ class Version1X extends AbstractSocketIO
         $this->createSocket();
 
         $query = [
-            'EIO'       => $this->options['version'],
+            'EIO' => $this->options['version'],
             'transport' => static::TRANSPORT_WEBSOCKET,
-            't'         => Yeast::yeast(),
-            'sid'       => $this->session->id,
+            't' => Yeast::yeast(),
+            'sid' => $this->session->id,
         ];
 
         if ($this->options['version'] === 2 && $this->options['use_b64']) {
