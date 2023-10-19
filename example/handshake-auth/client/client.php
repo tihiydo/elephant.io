@@ -11,7 +11,6 @@
  */
 
 use ElephantIO\Client;
-
 use ElephantIO\Exception\ServerConnectionFailureException;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -64,7 +63,6 @@ try {
 } catch (ServerConnectionFailureException $e) {
     echo sprintf("Authentication successfully failed with invalid credentials");
 }
-
 
 // close connection
 $client->close();

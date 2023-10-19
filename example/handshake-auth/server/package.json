@@ -6,6 +6,6 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "socket.io": "^4.7.1"
+    "socket.io": "^4.7.2"
   }
 }
