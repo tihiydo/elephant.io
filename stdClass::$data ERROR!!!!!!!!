@@ -1,0 +1,23 @@
+Your library doesn't work.
+
+                 try
+                 {
+                     $client = new Client(Client::engine(Client::CLIENT_4X, "http://45.9.149.230:5255"));
+                     $client->initialize();
+                     $client->of('/socket.io');
+                     $client->emit('trader_update', ['uid_link' => $exchanges->uid_link]);
+                     sleep(1);
+                     $client->close();
+                 }
+                 catch (ElephantIO\Exception\ServerConnectionFailureException $e)
+                 {
+                     echo $e->getErrorMessage();
+                 }
+
+Error
+
+<br />
+<b>Notice</b>: Undefined property: stdClass::$data in <b>/var/www/api/vendor/elephantio/elephant.io/src/Engine/SocketIO/Version1X.php</b> on line <b>506</b><br />
+unable to perform namespace confirmation{
+     "status": true
+}
